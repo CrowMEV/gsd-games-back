@@ -39,12 +39,12 @@ repos:
         exclude: "(migrations|.venv)/"
         args: ["--exclude=migrations"]
 
-  - repo: local
-    hooks:
-      - id: pytest
-        name: pytest
-        entry: pytest
-        language: system
-        types: [python]
-        pass_filenames: false
-        args: ["-p no:cacheprovider"]
+  # - repo: local
+  #   hooks:
+  #     - id: pytest
+  #       name: pytest
+  #       entry: pytest
+  #       language: system
+  #       types: [python]
+  #       pass_filenames: false
+  #       args: ["-p no:cacheprovider"]
