@@ -1,7 +1,8 @@
-from backend.core.settings import config
 from sqlalchemy import MetaData
 from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 from sqlalchemy.orm import DeclarativeBase
+
+from backend.core.settings import config
 
 
 async_engine = create_async_engine(config.aync_dsn)  # type: ignore
