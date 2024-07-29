@@ -6,7 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from backend.core.db import AsyncSession as async_project_session
 
 
-async def get_async_session() -> AsyncIterator:
+async def get_async_session() -> AsyncIterator[AsyncSession]:
     async with async_project_session() as session:
         yield session
 
