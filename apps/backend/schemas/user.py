@@ -1,10 +1,10 @@
 from datetime import datetime
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, EmailStr
 
 
 class User(BaseModel):
-    email: str
+    email: EmailStr
     password: str
     name: str
     avatar: str = ""

@@ -12,8 +12,9 @@ from sqlalchemy.ext.asyncio import (
 )
 from sqlalchemy.orm import Session
 
+# mypy: disable-error-code=import-untyped
 from backend.core._typing import MODEL
-from backend.core.dependency import AsyncSessionDepency
+from backend.core.dependency import get_async_session
 from backend.core.settings import config
 from backend.main import app
 from backend.models import Base
@@ -65,7 +66,7 @@ async def async_postgres_engine(postgres: str) -> AsyncIterator[AsyncEngine]:
     """
     config.DB_NAME = urlsplit(postgres).path[1:]
     config.DB_HOST = "localhost"
-    engine = create_async_engine(config.aync_dsn, echo=True)  # type: ignore
+    engine = create_async_engine(config.async_dsn, echo=True)  # type: ignore
     try:
         yield engine
     finally:
@@ -89,7 +90,7 @@ async def client(async_db: AsyncSession) -> AsyncIterator[AsyncClient]:
     TestClient for FastAPI
     """
     # pylint: disable=C0301
-    app.dependency_overrides[AsyncSessionDepency] = lambda: async_db
+    app.dependency_overrides[get_async_session] = lambda: async_db
     async with AsyncClient(
         transport=ASGITransport(app=app), base_url="http://test"  # type: ignore
     ) as ac:

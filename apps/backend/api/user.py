@@ -1,7 +1,8 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, status
 
 from backend.core.dependency import AsyncSessionDepency
 from backend.crud import common as common_crud
+from backend.crud import user as crud_user
 from backend.models import user as model_user
 from backend.schemas import user as schema_user
 
@@ -12,10 +13,17 @@ router = APIRouter(
 )
 
 
-@router.post("/", response_model=schema_user.UserResponse)
-async def create_user(user: schema_user.User, session: AsyncSessionDepency):
-    result = await common_crud.create_item(
-        session, model_user.User, user.model_dump()
+@router.post(
+    "/",
+    response_model=schema_user.UserResponse,
+    status_code=status.HTTP_201_CREATED,
+)
+async def create_user(
+    user: schema_user.User,
+    session: AsyncSessionDepency,
+):
+    result = await crud_user.create_or_update_user(
+        session, model_user.User, user.model_dump(), common_crud.create_item
     )
     return result
 
@@ -39,7 +47,8 @@ async def update_user(
         for key, value in user.model_dump().items()
         if value is not None
     }
-    result = await common_crud.update_item(
-        session, model_user.User, user_id, data
+    data["id"] = user_id
+    result = await crud_user.create_or_update_user(
+        session, model_user.User, data, common_crud.update_item
     )
     return result
