@@ -43,7 +43,7 @@ async def update_item(
     model: TYPE_MODEL,
     data: dict[str, Any],
 ) -> MODEL:
-    item_id = data["id"]
+    item_id = data.pop("id")
     stmt = (
         sa.update(model)
         .returning(model)
