@@ -25,6 +25,7 @@ class UserFactory(BaseFactory):
     email = LazyAttribute(lambda obj: f"{obj.name}@example.com")  # type: ignore
     avatar = FuzzyText()
     birth_date = FuzzyDate(datetime(1000, 1, 1).date())
+    is_active = True
 
 
 # pylint: disable=C0103

@@ -31,6 +31,7 @@ class User(BaseModel):
     name: str
     avatar: str = ""
     birth_date: datetime | None = None
+    is_active: bool = True
 
 
 class CreateUser(User):

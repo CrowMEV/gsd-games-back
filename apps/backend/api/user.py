@@ -1,9 +1,9 @@
 from datetime import timedelta
 
-from fastapi import APIRouter, HTTPException, UploadFile, status
+from fastapi import APIRouter, UploadFile, status
 
 from backend.core import security
-from backend.core.dependency import AsyncSessionDepency
+from backend.core.dependency import AsyncSessionDepency, GetCurrentUser
 from backend.core.settings import config
 from backend.crud import common as common_crud
 from backend.crud import user as crud_user
@@ -17,30 +17,24 @@ router = APIRouter(
 )
 
 
-@router.post("/uploadfile/")
+@router.post("/avatar/")
 async def create_upload_file(file: UploadFile):
     with open("bobik.txt", "wb") as file_:
         file_.write(await file.read())
     return {"filename": file.filename}
 
 
-@router.post("/token", response_model=schema_user.Token)
+@router.post("/login", response_model=schema_user.Token)
 async def login_for_access_token(
     session: AsyncSessionDepency,
     data: schema_user.UserLogin,
 ):
     user = await security.authenticate_user(session, **data.model_dump())
-    if not user:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Incorrect username or password",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
     access_token_expires = timedelta(
         minutes=config.ACCESS_TOKEN_EXPIRE_MINUTES
     )
     access_token = security.create_access_token(
-        data={"user_email": user.email}, expires_delta=access_token_expires
+        {"user_email": user.email}, access_token_expires
     )
     return schema_user.Token(token=access_token)
 
@@ -68,8 +62,8 @@ async def get_users(session: AsyncSessionDepency):
 
 
 @router.get("/{user_id}", response_model=schema_user.UserResponse)
-async def get_user_id(user_id: int, session: AsyncSessionDepency):
-    return await common_crud.get_item_id(session, model_user.User, user_id)
+async def get_user_id(user: GetCurrentUser):
+    return user
 
 
 @router.patch("/{user_id}", response_model=schema_user.UserResponse)

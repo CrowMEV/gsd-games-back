@@ -1,3 +1,5 @@
+from typing import Any
+
 import pytest
 from fastapi import status
 from httpx import AsyncClient
@@ -15,10 +17,13 @@ async def test_get_users(client: AsyncClient, factory: FactoryProtocol):
     assert response.status_code == status.HTTP_200_OK
 
 
-async def test_get_user_id(client: AsyncClient, factory: FactoryProtocol):
+async def test_get_user_id(client: AsyncClient, user_factory: dict[str, Any]):
 
-    user = factory(UserFactory, 1)[0]
-    response = await client.get(f"/users/{user.id}")
+    user = user_factory["user"]
+    response = await client.get(
+        f"/users/{user.id}",
+        headers={"Authorization": f"Bearer {user_factory["token"]}"},
+    )
     assert response.status_code == status.HTTP_200_OK
     response_data = response.json()
     response_data.pop("birth_date")
@@ -98,33 +103,25 @@ async def test_upload_avatar(client: AsyncClient):
         data = {
             "file": file,
         }
-        response = await client.post("/users/uploadfile/", files=data)
+        response = await client.post("/users/avatar/", files=data)
         assert response.status_code == status.HTTP_200_OK
 
 
-async def test_get_token(client: AsyncClient):
-    data = {
-        "name": "Lyna",
-        "email": "e@example.com",
-        "password": "parol74588",
-    }
-    await client.post("/users/", json=data)
+async def test_get_token(client: AsyncClient, user_factory: dict[str, Any]):
+    user = user_factory["user"]
     response = await client.post(
-        "/users/token",
-        json={"email": "e@example.com", "password": "parol74588"},
+        "/users/login",
+        json={"email": user.email, "password": "pass"},
     )
     assert response.status_code == status.HTTP_200_OK
 
 
-async def test_get_wrong_token(client: AsyncClient):
-    data = {
-        "name": "Lyna",
-        "email": "e@example.com",
-        "password": "parol74588",
-    }
-    await client.post("/users/", json=data)
+async def test_get_wrong_token(
+    client: AsyncClient, user_factory: dict[str, Any]
+):
+    user = user_factory["user"]
     response = await client.post(
-        "/users/token",
-        json={"email": "e@e.com", "password": "parol74588"},
+        "/users/login",
+        json={"email": user.email, "password": "parol74588"},
     )
     assert response.status_code == status.HTTP_401_UNAUTHORIZED

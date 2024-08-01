@@ -1,4 +1,5 @@
-from typing import AsyncIterator, Iterator
+from datetime import timedelta
+from typing import Any, AsyncIterator, Iterator
 from urllib.parse import urlsplit
 
 import pytest
@@ -14,10 +15,11 @@ from sqlalchemy.orm import Session
 
 from backend.core._typing import MODEL
 from backend.core.dependency import get_async_session
+from backend.core.security import create_access_token, get_password_hash
 from backend.core.settings import config
 from backend.main import app
 from backend.models import Base
-from tests.factory_model import TYPE_FACTORY_MODEL, FactoryProtocol
+from tests import factory_model
 from utils.tests_util import tmp_database
 
 
@@ -99,16 +101,35 @@ async def client(async_db: AsyncSession) -> AsyncIterator[AsyncClient]:
 
 
 @pytest.fixture
-def factory(db: Session) -> FactoryProtocol:
+def factory(db: Session) -> factory_model.FactoryProtocol:
     """
     Create factory for factory boy
     """
 
     def _factory(
-        fabric_model: TYPE_FACTORY_MODEL, count: int, *args, **kwargs
+        fabric_model: factory_model.TYPE_FACTORY_MODEL,
+        count: int,
+        *args,
+        **kwargs
     ) -> list[MODEL]:
         # pylint: disable=W0212
         fabric_model._meta.sqlalchemy_session = db  # type: ignore
         return fabric_model.create_batch(count, *args, **kwargs)
 
     return _factory
+
+
+@pytest.fixture
+def user_factory(factory: factory_model.FactoryProtocol) -> dict[str, Any]:
+
+    user = factory(
+        factory_model.UserFactory, 1, password=get_password_hash("pass")
+    )[0]
+    access_token_expires = timedelta(
+        minutes=config.ACCESS_TOKEN_EXPIRE_MINUTES
+    )
+    token = create_access_token(
+        {"user_email": user.email}, access_token_expires
+    )
+
+    return {"user": user, "token": token}

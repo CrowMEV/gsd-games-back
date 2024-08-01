@@ -18,3 +18,4 @@ class User(Base):
     )
     avatar: Mapped[str] = mapped_column(default="")
     birth_date: Mapped[datetime.date] = mapped_column(Date, nullable=True)  # type: ignore
+    is_active: Mapped[bool] = mapped_column(server_default=sa.true())

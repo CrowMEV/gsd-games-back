@@ -1,9 +1,12 @@
 from datetime import datetime, timedelta, timezone
 
 import jwt
+from fastapi import status
+from fastapi.exceptions import HTTPException
 from passlib.context import CryptContext
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from backend import models
 from backend.core.settings import config
 from backend.crud.user import get_user
 
@@ -19,12 +22,16 @@ def get_password_hash(password: str) -> str:
     return pwd_context.hash(password)
 
 
-async def authenticate_user(session: AsyncSession, email: str, password: str):
+async def authenticate_user(
+    session: AsyncSession, email: str, password: str
+) -> models.User:
     user = await get_user(session, email)
-    if not user:
-        return False
-    if not verify_password(password, user.password):
-        return False
+    if not user or not verify_password(password, user.password):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Incorrect username or password",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
     return user
 
 
