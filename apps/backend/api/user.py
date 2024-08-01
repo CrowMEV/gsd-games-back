@@ -1,6 +1,10 @@
-from fastapi import APIRouter, status
+from datetime import timedelta
 
+from fastapi import APIRouter, HTTPException, UploadFile, status
+
+from backend.core import security
 from backend.core.dependency import AsyncSessionDepency
+from backend.core.settings import config
 from backend.crud import common as common_crud
 from backend.crud import user as crud_user
 from backend.models import user as model_user
@@ -13,17 +17,47 @@ router = APIRouter(
 )
 
 
+@router.post("/uploadfile/")
+async def create_upload_file(file: UploadFile):
+    with open("bobik.txt", "wb") as file_:
+        file_.write(await file.read())
+    return {"filename": file.filename}
+
+
+@router.post("/token", response_model=schema_user.Token)
+async def login_for_access_token(
+    session: AsyncSessionDepency,
+    data: schema_user.UserLogin,
+):
+    user = await security.authenticate_user(session, **data.model_dump())
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Incorrect username or password",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    access_token_expires = timedelta(
+        minutes=config.ACCESS_TOKEN_EXPIRE_MINUTES
+    )
+    access_token = security.create_access_token(
+        data={"user_email": user.email}, expires_delta=access_token_expires
+    )
+    return schema_user.Token(token=access_token)
+
+
 @router.post(
     "/",
     response_model=schema_user.UserResponse,
     status_code=status.HTTP_201_CREATED,
 )
 async def create_user(
-    user: schema_user.User,
+    user: schema_user.CreateUser,
     session: AsyncSessionDepency,
 ):
+    data = user.model_dump()
+    data["password"] = security.get_password_hash(data["password"])
     result = await crud_user.create_or_update_user(
-        session, model_user.User, user.model_dump(), common_crud.create_item
+        session, model_user.User, data, common_crud.create_item
     )
     return result
 
@@ -47,6 +81,8 @@ async def update_user(
         for key, value in user.model_dump().items()
         if value is not None
     }
+    if data.get("password"):
+        data["password"] = security.get_password_hash(data["password"])
     data["id"] = user_id
     result = await crud_user.create_or_update_user(
         session, model_user.User, data, common_crud.update_item

@@ -1,5 +1,6 @@
 from typing import Any, Awaitable, Callable, Type
 
+import sqlalchemy as sa
 from fastapi import HTTPException, status
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -26,3 +27,8 @@ async def create_or_update_user(
         raise err
 
     return result
+
+
+async def get_user(session: AsyncSession, email: str) -> User | None:
+    stmt = sa.select(User).where(User.email == email)
+    return await session.scalar(stmt)
