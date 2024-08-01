@@ -12,13 +12,12 @@ from sqlalchemy.ext.asyncio import (
 )
 from sqlalchemy.orm import Session
 
-# mypy: disable-error-code=import-untyped
 from backend.core._typing import MODEL
 from backend.core.dependency import get_async_session
 from backend.core.settings import config
 from backend.main import app
 from backend.models import Base
-from tests.model_factory import TYPE_FACTORY_MODEL, FactoryProtocol
+from tests.factory_model import TYPE_FACTORY_MODEL, FactoryProtocol
 from utils.tests_util import tmp_database
 
 
@@ -64,6 +63,7 @@ async def async_postgres_engine(postgres: str) -> AsyncIterator[AsyncEngine]:
     """
     SQLAlchemy async engine, bound to temporary database.
     """
+    # pylint: disable=C0103
     config.DB_NAME = urlsplit(postgres).path[1:]
     config.DB_HOST = "localhost"
     engine = create_async_engine(config.async_dsn, echo=True)  # type: ignore

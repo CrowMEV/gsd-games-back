@@ -8,10 +8,9 @@ class Config(BaseSettings):
     model_config = SettingsConfigDict(extra="allow")
 
     ROOT_DIR: Path = Path(__file__).parent.parent.resolve()
+    MEDIA_DIR: Path = ROOT_DIR / "media"
 
     # run server
-    HOST: str = "0.0.0.0"
-    PORT: int = 8000
     DEBUG: bool = True
 
     # fastapi app
@@ -20,6 +19,11 @@ class Config(BaseSettings):
     APP_ALLOWED_HOSTS: list[str] = ["*"]
     DOCS_URL: str | None = None
     REDOC_URL: str | None = None
+
+    # JWT token
+    SECRET_KEY: str = ""
+    ALGORITHM: str = ""
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 0
 
     # DB settings
     DB_USER: str = "postgres"
