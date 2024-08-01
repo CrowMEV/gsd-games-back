@@ -1,4 +1,5 @@
 from datetime import timedelta
+from shutil import rmtree
 from typing import Any, AsyncIterator, Iterator
 from urllib.parse import urlsplit
 
@@ -133,3 +134,14 @@ def user_factory(factory: factory_model.FactoryProtocol) -> dict[str, Any]:
     )
 
     return {"user": user, "token": token}
+
+
+@pytest.fixture
+def path_image():
+    return config.ROOT_DIR.parent / "tests" / "test-image.jpg"
+
+
+@pytest.fixture
+def delete_media_dir():
+    yield
+    rmtree(config.MEDIA_DIR)

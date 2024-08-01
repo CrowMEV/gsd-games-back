@@ -1,3 +1,4 @@
+from pathlib import Path
 from typing import Any
 
 import pytest
@@ -98,12 +99,20 @@ async def test_invalid_password(client: AsyncClient):
     assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
 
 
-async def test_upload_avatar(client: AsyncClient):
-    with open(".env", "rb") as file:
+async def test_upload_avatar(
+    client: AsyncClient,
+    user_factory: dict[str, Any],
+    path_image: Path,
+    delete_media_dir,
+):
+    headers = {"Authorization": f"Bearer {user_factory["token"]}"}
+    with open(path_image, "rb") as file:
         data = {
             "file": file,
         }
-        response = await client.post("/users/avatar/", files=data)
+        response = await client.post(
+            "/users/avatar/", files=data, headers=headers
+        )
         assert response.status_code == status.HTTP_200_OK
 
 

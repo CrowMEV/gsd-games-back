@@ -23,7 +23,7 @@ class UserFactory(BaseFactory):
     password = FuzzyText()
     name = FuzzyText()
     email = LazyAttribute(lambda obj: f"{obj.name}@example.com")  # type: ignore
-    avatar = FuzzyText()
+    avatar = ""
     birth_date = FuzzyDate(datetime(1000, 1, 1).date())
     is_active = True
 

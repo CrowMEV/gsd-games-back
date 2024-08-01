@@ -1,6 +1,8 @@
 from datetime import timedelta
+from pathlib import Path
+from uuid import uuid4
 
-from fastapi import APIRouter, UploadFile, status
+from fastapi import APIRouter, HTTPException, UploadFile, status
 
 from backend.core import security
 from backend.core.dependency import AsyncSessionDepency, GetCurrentUser
@@ -17,11 +19,29 @@ router = APIRouter(
 )
 
 
-@router.post("/avatar/")
-async def create_upload_file(file: UploadFile):
-    with open("bobik.txt", "wb") as file_:
-        file_.write(await file.read())
-    return {"filename": file.filename}
+@router.post("/avatar/", response_model=schema_user.User)
+async def create_upload_avatar(
+    session: AsyncSessionDepency, user: GetCurrentUser, file: UploadFile
+):
+    db_user = await crud_user.get_user(session, user.email)
+    if not db_user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="User not found"
+        )
+    if db_user.avatar != "":
+        file_path = Path(db_user.avatar)
+        file_path.unlink()
+    avatar_name = Path(file.filename)  # type: ignore
+
+    path_avatar = (
+        config.MEDIA_DIR
+        / f"{avatar_name.stem}{str(uuid4())}{avatar_name.suffix}"
+    )
+    path_avatar.write_bytes(await file.read())
+    db_user.avatar = str(path_avatar)
+    await session.commit()
+    await session.refresh(db_user)
+    return db_user
 
 
 @router.post("/login", response_model=schema_user.Token)
