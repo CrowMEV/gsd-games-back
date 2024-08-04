@@ -14,12 +14,13 @@ from sqlalchemy.ext.asyncio import (
 )
 from sqlalchemy.orm import Session
 
-from backend.core._typing import MODEL
+from backend.core._typing import MODEL, UserFactoryCallback
+from backend.core.db import Base
 from backend.core.dependency import get_async_session
 from backend.core.security import create_access_token, get_password_hash
 from backend.core.settings import config
 from backend.main import app
-from backend.models import Base
+from backend.models.user import RoleChoice
 from tests import factory_model
 from utils.tests_util import tmp_database
 
@@ -121,19 +122,27 @@ def factory(db: Session) -> factory_model.FactoryProtocol:
 
 
 @pytest.fixture
-def user_factory(factory: factory_model.FactoryProtocol) -> dict[str, Any]:
+def user_factory(
+    factory: factory_model.FactoryProtocol,
+) -> UserFactoryCallback:
+    def _factory(role: RoleChoice) -> dict[str, Any]:
 
-    user = factory(
-        factory_model.UserFactory, 1, password=get_password_hash("pass")
-    )[0]
-    access_token_expires = timedelta(
-        minutes=config.ACCESS_TOKEN_EXPIRE_MINUTES
-    )
-    token = create_access_token(
-        {"user_email": user.email}, access_token_expires
-    )
+        user = factory(
+            factory_model.UserFactory,
+            1,
+            password=get_password_hash("pass"),
+            role=role,
+        )[0]
+        access_token_expires = timedelta(
+            minutes=config.ACCESS_TOKEN_EXPIRE_MINUTES
+        )
+        token = create_access_token(
+            {"user_email": user.email}, access_token_expires
+        )
 
-    return {"user": user, "token": token}
+        return {"user": user, "token": token}
+
+    return _factory
 
 
 @pytest.fixture
