@@ -5,6 +5,8 @@ from typing import Annotated
 from pydantic import BaseModel, ConfigDict, EmailStr
 from pydantic.functional_validators import AfterValidator
 
+from backend.models.user import RoleChoice
+
 
 def check_password(password: str) -> str:
     assert len(password) >= 8, "Password is sholter than 8 characters"
@@ -40,6 +42,7 @@ class CreateUser(User):
 
 class UserResponse(User):
     id: int
+    role: RoleChoice
     model_config = ConfigDict(from_attributes=True)
 
 

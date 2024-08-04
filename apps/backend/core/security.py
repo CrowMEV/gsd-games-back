@@ -7,10 +7,8 @@ from passlib.context import CryptContext
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend import models
-from backend.core.dependency import AsyncSessionDepency, AuthentificateDocs
 from backend.core.settings import config
 from backend.crud.user import get_user
-from backend.models.user import RoleChoice
 
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
@@ -48,22 +46,3 @@ def create_access_token(data: dict, expires_delta: timedelta | None = None):
         to_encode, config.SECRET_KEY, algorithm=config.ALGORITHM
     )
     return encoded_jwt
-
-
-async def secure_docs(
-    credentials: AuthentificateDocs, session: AsyncSessionDepency
-):
-    exception_message = HTTPException(
-        status_code=status.HTTP_401_UNAUTHORIZED,
-        detail="Incorrect email or password",
-        headers={"WWW-Authenticate": "Basic"},
-    )
-    user = await get_user(session, credentials.username)
-    if not user:
-        raise exception_message
-    if (
-        not verify_password(credentials.password, user.password)
-        and user.role == RoleChoice.ADMIN
-    ):
-        raise exception_message
-    return True

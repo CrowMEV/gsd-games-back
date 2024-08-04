@@ -1,33 +1,58 @@
 from pathlib import Path
-from typing import Any
 
 import pytest
 from fastapi import status
 from httpx import AsyncClient
 
-from tests.factory_model import FactoryProtocol, UserFactory
+from backend.core._typing import UserFactoryCallback
+from backend.models.user import RoleChoice
+from tests import factory_model
 
 
 pytestmark = pytest.mark.anyio
 
 
-async def test_get_users(client: AsyncClient, factory: FactoryProtocol):
+async def test_get_users(
+    client: AsyncClient,
+    factory: factory_model.FactoryProtocol,
+    user_factory: UserFactoryCallback,
+):
 
-    factory(UserFactory, 10)
-    response = await client.get("/users/")
+    factory(factory_model.UserFactory, 10)
+    user = user_factory(RoleChoice.ADMIN)
+    headers = {"Authorization": f"Bearer {user["token"]}"}
+    response = await client.get("/users/", headers=headers)
     assert response.status_code == status.HTTP_200_OK
 
 
-async def test_get_user_id(client: AsyncClient, user_factory: dict[str, Any]):
+async def test_get_users_user(
+    client: AsyncClient,
+    factory: factory_model.FactoryProtocol,
+    user_factory: UserFactoryCallback,
+):
 
-    user = user_factory["user"]
+    factory(factory_model.UserFactory, 10)
+    user = user_factory(RoleChoice.USER)
+    headers = {"Authorization": f"Bearer {user["token"]}"}
+    response = await client.get("/users/", headers=headers)
+    assert response.status_code == status.HTTP_403_FORBIDDEN
+
+
+async def test_get_user_id(
+    client: AsyncClient, user_factory: UserFactoryCallback
+):
+
+    user_dict = user_factory(RoleChoice.USER)
+    user = user_dict["user"]
     response = await client.get(
         f"/users/{user.id}",
-        headers={"Authorization": f"Bearer {user_factory["token"]}"},
+        headers={"Authorization": f"Bearer {user_dict["token"]}"},
     )
     assert response.status_code == status.HTTP_200_OK
     response_data = response.json()
     response_data.pop("birth_date")
+    assert user.role.value == response_data["role"]
+    response_data.pop("role")
     assert all(
         response_data[key] == getattr(user, key) for key in response_data
     )
@@ -48,26 +73,34 @@ async def test_create_user(client: AsyncClient):
     assert response.json()["email"] == data["email"]
 
 
-async def test_update_user(client: AsyncClient, factory: FactoryProtocol):
+async def test_update_user(
+    client: AsyncClient, user_factory: UserFactoryCallback
+):
 
-    user = factory(UserFactory, 1)[0]
+    user_dict = user_factory(RoleChoice.USER)
+    user = user_dict["user"]
+    headers = {"Authorization": f"Bearer {user_dict["token"]}"}
 
     updated_data = {"name": "updateduser", "email": "user@e.com"}
-    response = await client.patch(f"/users/{user.id}", json=updated_data)
+    response = await client.patch(
+        f"/users/{user.id}", json=updated_data, headers=headers
+    )
 
     assert response.status_code == status.HTTP_200_OK
     assert response.json()["name"] == updated_data["name"]
     assert response.json()["email"] == updated_data["email"]
 
 
-async def test_dublicate_email(client: AsyncClient):
-
+async def test_dublicate_email(
+    client: AsyncClient, user_factory: UserFactoryCallback
+):
+    user_dict = user_factory(RoleChoice.USER)
+    user = user_dict["user"]
     data = {
         "name": "Bobik",
-        "email": "e@example.com",
+        "email": user.email,
         "password": "password123",
     }
-    await client.post("/users/", json=data)
     response = await client.post("/users/", json=data)
 
     assert response.status_code == status.HTTP_409_CONFLICT
@@ -76,13 +109,17 @@ async def test_dublicate_email(client: AsyncClient):
 
 
 async def test_dublicate_email_update(
-    client: AsyncClient, factory: FactoryProtocol
+    client: AsyncClient, user_factory: UserFactoryCallback
 ):
-    user = factory(UserFactory, 1, email="e@example.com")[0]
-    factory(UserFactory, 1, email="e2@ex.com")
+    user = user_factory(RoleChoice.USER)["user"]
+    user_dict = user_factory(RoleChoice.USER)
+    user2 = user_dict["user"]
+    headers = {"Authorization": f"Bearer {user_dict["token"]}"}
 
-    data = {"email": "e2@ex.com"}
-    response = await client.patch(f"/users/{user.id}", json=data)
+    data = {"email": user.email}
+    response = await client.patch(
+        f"/users/{user2.id}", json=data, headers=headers
+    )
 
     assert response.status_code == status.HTTP_409_CONFLICT
     message = f"User with {data['email']} already exist"
@@ -101,11 +138,12 @@ async def test_invalid_password(client: AsyncClient):
 
 async def test_upload_avatar(
     client: AsyncClient,
-    user_factory: dict[str, Any],
+    user_factory: UserFactoryCallback,
     path_image: Path,
     delete_media_dir,
 ):
-    headers = {"Authorization": f"Bearer {user_factory["token"]}"}
+    user_dict = user_factory(RoleChoice.USER)
+    headers = {"Authorization": f"Bearer {user_dict["token"]}"}
     with open(path_image, "rb") as file:
         data = {
             "file": file,
@@ -116,8 +154,12 @@ async def test_upload_avatar(
         assert response.status_code == status.HTTP_200_OK
 
 
-async def test_get_token(client: AsyncClient, user_factory: dict[str, Any]):
-    user = user_factory["user"]
+async def test_get_token(
+    client: AsyncClient,
+    user_factory: UserFactoryCallback,
+):
+    user_dict = user_factory(RoleChoice.USER)
+    user = user_dict["user"]
     response = await client.post(
         "/users/login",
         json={"email": user.email, "password": "pass"},
@@ -126,9 +168,11 @@ async def test_get_token(client: AsyncClient, user_factory: dict[str, Any]):
 
 
 async def test_get_wrong_token(
-    client: AsyncClient, user_factory: dict[str, Any]
+    client: AsyncClient,
+    user_factory: UserFactoryCallback,
 ):
-    user = user_factory["user"]
+    user_dict = user_factory(RoleChoice.USER)
+    user = user_dict["user"]
     response = await client.post(
         "/users/login",
         json={"email": user.email, "password": "parol74588"},

@@ -7,7 +7,7 @@ from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 
 from backend.api import user
-from backend.core.security import secure_docs
+from backend.core.dependency import secure_docs
 from backend.core.settings import config
 
 
