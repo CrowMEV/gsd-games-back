@@ -3,16 +3,29 @@ from pathlib import Path
 from pydantic import computed_field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+from backend.core import utils
+
 
 class Config(BaseSettings):
     model_config = SettingsConfigDict(extra="allow")
 
     ROOT_DIR: Path = Path(__file__).parent.parent.resolve()
+    MEDIA_DIR: Path = ROOT_DIR / "media"
 
     # run server
-    HOST: str = "0.0.0.0"
-    PORT: int = 8000
     DEBUG: bool = True
+
+    # fastapi app
+    APP_NAME: str = "GSD GAMES"
+    APP_ALLOWED_ORIGINS: list[str] = ["*"]
+    APP_ALLOWED_HOSTS: list[str] = ["*"]
+    DOCS_URL: str | None = None
+    REDOC_URL: str | None = None
+
+    # JWT token
+    SECRET_KEY: str = ""
+    ALGORITHM: str = ""
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 0
 
     # DB settings
     DB_USER: str = "postgres"
@@ -30,7 +43,7 @@ class Config(BaseSettings):
         )
 
     @computed_field
-    def aync_dsn(self) -> str:
+    def async_dsn(self) -> str:
         return (
             f"postgresql+asyncpg://{self.DB_USER}:"
             f"{self.DB_PASSWORD}@{self.DB_HOST}:"
@@ -39,3 +52,5 @@ class Config(BaseSettings):
 
 
 config = Config()
+
+utils.create_dir(config.MEDIA_DIR)

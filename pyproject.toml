@@ -15,6 +15,9 @@ asyncpg = "^0.29.0"
 psycopg2-binary = "^2.9.9"
 uvicorn = {extras = ["standard"], version = "^0.30.1"}
 gunicorn = "^22.0.0"
+pyjwt = "^2.8.0"
+passlib = {extras = ["bcrypt"], version = "^1.7.4"}
+python-multipart = "^0.0.9"
 
 
 
@@ -25,6 +28,9 @@ pylint-pytest = "^1.1.8"
 httpx = "^0.27.0"
 black = "^24.4.2"
 isort = "^5.13.2"
+factory-boy = "^3.3.0"
+types-factory-boy = "^0.4.1"
+types-passlib = "^1.7.7.20240327"
 
 
 [tool.poetry.group.bot.dependencies]
@@ -44,7 +50,7 @@ extend-exclude = "migrations/"
 [tool.isort]
 profile = "black"
 extend_skip_glob = ["migrations"]
-known_local_folder=["backend", "utils"]
+known_local_folder=["backend", "utils", "tests"]
 line_length = 79
 lines_after_imports = 2
 
@@ -53,6 +59,15 @@ lines_after_imports = 2
 [tool.mypy]
 exclude = ["migrations/"]
 
+[[tool.mypy.overrides]]
+module = "backend.*"
+ignore_missing_imports = true 
+[[tool.mypy.overrides]]
+module = "tests.*"
+ignore_missing_imports = true 
+[[tool.mypy.overrides]]
+module = "utils.*"
+ignore_missing_imports = true 
 
 [tool.pylint]
 ignore = [".git", "__pycache__", "migrations", ".venv"]
