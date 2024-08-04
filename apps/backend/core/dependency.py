@@ -3,7 +3,12 @@ from typing import Annotated, AsyncIterator
 import jwt
 from fastapi import Depends, status
 from fastapi.exceptions import HTTPException
-from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+from fastapi.security import (
+    HTTPAuthorizationCredentials,
+    HTTPBasic,
+    HTTPBasicCredentials,
+    HTTPBearer,
+)
 from jwt.exceptions import InvalidTokenError
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -57,3 +62,4 @@ async def get_current_active_user(
 
 
 GetCurrentUser = Annotated[user_schema.User, Depends(get_current_active_user)]
+AuthentificateDocs = Annotated[HTTPBasicCredentials, Depends(HTTPBasic())]
