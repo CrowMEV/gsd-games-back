@@ -3,10 +3,10 @@ from typing import Any, Protocol, Type
 
 from factory import LazyAttribute
 from factory.alchemy import SQLAlchemyModelFactory
-from factory.fuzzy import FuzzyDate, FuzzyText
+from factory.fuzzy import FuzzyDate, FuzzyInteger, FuzzyText
 
 from backend.core._typing import MODEL
-from backend.models import User
+from backend.models import Game, User
 
 
 class BaseFactory(SQLAlchemyModelFactory):
@@ -28,8 +28,19 @@ class UserFactory(BaseFactory):
     is_active = True
 
 
+# pylint: disable=C0301
+class GameFactory(BaseFactory):
+    class Meta:
+        model = Game
+
+    title = FuzzyText()
+    description = FuzzyText()
+    rule_description = FuzzyText()
+    price = FuzzyInteger(1, 1000)
+
+
 # pylint: disable=C0103
-FACTORY_MODEL = UserFactory
+FACTORY_MODEL = UserFactory | GameFactory
 
 TYPE_FACTORY_MODEL = Type[FACTORY_MODEL]
 
