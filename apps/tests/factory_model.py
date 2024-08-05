@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Any, Protocol, Type
+from typing import Any, Protocol, Type, TypeVar
 
 from factory import LazyAttribute
 from factory.alchemy import SQLAlchemyModelFactory
@@ -40,7 +40,7 @@ class GameFactory(BaseFactory):
 
 
 # pylint: disable=C0103
-FACTORY_MODEL = UserFactory | GameFactory
+FACTORY_MODEL = TypeVar("FACTORY_MODEL", UserFactory, GameFactory)
 
 TYPE_FACTORY_MODEL = Type[FACTORY_MODEL]
 
