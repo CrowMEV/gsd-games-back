@@ -6,7 +6,7 @@ from fastapi.openapi.utils import get_openapi
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 
-from backend.api import user
+from backend.api import game, user
 from backend.core.dependency import secure_docs
 from backend.core.settings import config
 
@@ -57,3 +57,4 @@ if not config.DEBUG:
 
 
 app.include_router(user.router)
+app.include_router(game.router)

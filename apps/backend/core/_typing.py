@@ -1,9 +1,10 @@
-from typing import Any, Callable, Type
+from typing import Any, Callable, Type, TypeVar
 
+from backend.models.game import Game
 from backend.models.user import RoleChoice, User
 
 
-MODEL = User
+MODEL = TypeVar("MODEL", User, Game)
 
 TYPE_MODEL = Type[MODEL]  # pylint: disable=C0103
 
