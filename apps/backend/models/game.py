@@ -11,3 +11,4 @@ class Game(Base):
     description: Mapped[str]
     rule_description: Mapped[str]
     price: Mapped[int]
+    image: Mapped[str]

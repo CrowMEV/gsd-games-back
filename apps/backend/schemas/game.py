@@ -1,3 +1,6 @@
+from dataclasses import dataclass
+
+from fastapi import Form, UploadFile
 from pydantic import BaseModel, ConfigDict, PositiveInt
 
 
@@ -6,6 +9,7 @@ class Game(BaseModel):
     description: str
     rule_description: str
     price: PositiveInt
+    image: str
 
 
 class GameResponse(Game):
@@ -13,8 +17,19 @@ class GameResponse(Game):
     model_config = ConfigDict(from_attributes=True)
 
 
-class GameUpdate(BaseModel):
-    title: str | None = None
-    description: str | None = None
-    rule_description: str | None = None
-    price: PositiveInt | None = None
+@dataclass
+class GameCreate:
+    title: str = Form(...)
+    description: str = Form(...)
+    rule_description: str = Form(...)
+    price: PositiveInt = Form(...)
+    image: UploadFile = Form(...)
+
+
+@dataclass
+class GameUpdate:
+    title: str = Form(default=None)
+    description: str = Form(default=None)
+    rule_description: str = Form(default=None)
+    price: PositiveInt = Form(default=None)
+    image: UploadFile = Form(default=None)

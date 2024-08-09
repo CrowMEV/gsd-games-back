@@ -1,11 +1,11 @@
 from datetime import timedelta
 from pathlib import Path
-from uuid import uuid4
 
 import fastapi as fa
 
 from backend.core import dependency, security
 from backend.core.settings import config
+from backend.core.utils import write_file
 from backend.crud import common as common_crud
 from backend.crud import user as crud_user
 from backend.models import user as model_user
@@ -32,14 +32,11 @@ async def create_upload_avatar(
     if db_user.avatar != "":
         file_path = Path(db_user.avatar)
         file_path.unlink()
-    avatar_name = Path(file.filename)  # type: ignore
 
-    path_avatar = (
-        config.MEDIA_DIR
-        / f"{avatar_name.stem}{str(uuid4())}{avatar_name.suffix}"
+    db_user.avatar = write_file(
+        file.filename,  # type: ignore
+        await file.read(),
     )
-    path_avatar.write_bytes(await file.read())
-    db_user.avatar = str(path_avatar)
     await session.commit()
     await session.refresh(db_user)
     return db_user
