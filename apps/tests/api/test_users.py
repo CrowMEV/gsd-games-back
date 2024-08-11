@@ -92,7 +92,8 @@ async def test_update_user(
 
 
 async def test_dublicate_email(
-    client: AsyncClient, user_factory: UserFactoryCallback
+    client: AsyncClient,
+    user_factory: UserFactoryCallback,
 ):
     user_dict = user_factory(RoleChoice.USER)
     user = user_dict["user"]
