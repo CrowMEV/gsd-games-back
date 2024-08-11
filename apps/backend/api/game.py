@@ -1,12 +1,8 @@
-from pathlib import Path
-
 import fastapi as fa
 
 from backend.core import dependency
-from backend.core.utils import write_file
 from backend.crud import common as common_crud
 from backend.crud import game as crud_game
-from backend.crud.common import get_item_id
 from backend.models import game as model_game
 from backend.models import user as model_user
 from backend.schemas import game as schema_game
@@ -45,12 +41,6 @@ async def create_game(
     game: schema_game.GameCreate = fa.Depends(),
 ):
     data = game.__dict__
-    image = data.pop("image")
-
-    data["image"] = write_file(
-        image.filename,  # type: ignore
-        await image.read(),
-    )
 
     result = await crud_game.create_or_update_game(
         session, model_game.Game, data, common_crud.create_item
@@ -79,15 +69,6 @@ async def update_game(
         for key, value in game_data.__dict__.items()
         if value is not None
     }
-    image = upload_data.pop("image", None)
-    if image:
-        game = await get_item_id(session, model_game.Game, game_id)
-        Path(game.image).unlink()  # type: ignore
-
-        upload_data["image"] = write_file(
-            image.filename,  # type: ignore
-            await image.read(),
-        )
 
     upload_data["id"] = game_id
     result = await crud_game.create_or_update_game(
