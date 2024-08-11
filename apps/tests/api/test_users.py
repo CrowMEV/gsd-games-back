@@ -6,7 +6,7 @@ from httpx import AsyncClient
 
 from backend.core._typing import UserFactoryCallback
 from backend.models.user import RoleChoice
-from tests import factory_model
+from tests import factory_model_test
 
 
 pytestmark = pytest.mark.anyio
@@ -14,11 +14,11 @@ pytestmark = pytest.mark.anyio
 
 async def test_get_users(
     client: AsyncClient,
-    factory: factory_model.FactoryProtocol,
+    factory: factory_model_test.FactoryProtocol,
     user_factory: UserFactoryCallback,
 ):
 
-    factory(factory_model.UserFactory, 10)
+    factory(factory_model_test.UserFactory, 10)
     user = user_factory(RoleChoice.ADMIN)
     headers = {"Authorization": f"Bearer {user["token"]}"}
     response = await client.get("/users/", headers=headers)
@@ -27,11 +27,11 @@ async def test_get_users(
 
 async def test_get_users_user(
     client: AsyncClient,
-    factory: factory_model.FactoryProtocol,
+    factory: factory_model_test.FactoryProtocol,
     user_factory: UserFactoryCallback,
 ):
 
-    factory(factory_model.UserFactory, 10)
+    factory(factory_model_test.UserFactory, 10)
     user = user_factory(RoleChoice.USER)
     headers = {"Authorization": f"Bearer {user["token"]}"}
     response = await client.get("/users/", headers=headers)
@@ -141,7 +141,6 @@ async def test_upload_avatar(
     client: AsyncClient,
     user_factory: UserFactoryCallback,
     path_image: Path,
-    delete_media_dir,
 ):
     user_dict = user_factory(RoleChoice.USER)
     headers = {"Authorization": f"Bearer {user_dict["token"]}"}
@@ -152,7 +151,7 @@ async def test_upload_avatar(
         response = await client.post(
             "/users/avatar/", files=data, headers=headers
         )
-        assert response.status_code == status.HTTP_200_OK
+    assert response.status_code == status.HTTP_200_OK
 
 
 async def test_get_token(

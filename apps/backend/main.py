@@ -16,6 +16,7 @@ app = FastAPI(
     docs_url=config.DOCS_URL,
     redoc_url=config.REDOC_URL,
 )
+
 app.mount("/media", StaticFiles(directory=config.MEDIA_DIR), name="media")
 
 

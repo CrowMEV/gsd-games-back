@@ -21,7 +21,7 @@ from backend.core.security import create_access_token, get_password_hash
 from backend.core.settings import config
 from backend.main import app
 from backend.models.user import RoleChoice
-from tests import factory_model
+from tests import factory_model_test
 from utils.tests_util import tmp_database
 
 
@@ -103,13 +103,13 @@ async def client(async_db: AsyncSession) -> AsyncIterator[AsyncClient]:
 
 
 @pytest.fixture
-def factory(db: Session) -> factory_model.FactoryProtocol:
+def factory(db: Session) -> factory_model_test.FactoryProtocol:
     """
     Create factory for factory boy
     """
 
     def _factory(
-        fabric_model: factory_model.TYPE_FACTORY_MODEL,
+        fabric_model: factory_model_test.TYPE_FACTORY_MODEL,
         count: int,
         *args,
         **kwargs
@@ -123,12 +123,12 @@ def factory(db: Session) -> factory_model.FactoryProtocol:
 
 @pytest.fixture
 def user_factory(
-    factory: factory_model.FactoryProtocol,
+    factory: factory_model_test.FactoryProtocol,
 ) -> UserFactoryCallback:
     def _factory(role: RoleChoice) -> dict[str, Any]:
 
         user = factory(
-            factory_model.UserFactory,
+            factory_model_test.UserFactory,
             1,
             password=get_password_hash("pass"),
             role=role,
@@ -150,7 +150,7 @@ def path_image():
     return config.ROOT_DIR.parent / "tests" / "test-image.jpg"
 
 
-@pytest.fixture
+@pytest.fixture(scope="session", autouse=True)
 def delete_media_dir():
     yield
     rmtree(config.MEDIA_DIR)

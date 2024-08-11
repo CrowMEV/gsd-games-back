@@ -3,8 +3,6 @@ from pathlib import Path
 from pydantic import computed_field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
-from backend.core import utils
-
 
 class Config(BaseSettings):
     model_config = SettingsConfigDict(extra="allow")
@@ -50,7 +48,9 @@ class Config(BaseSettings):
             f"{self.DB_PORT}/{self.DB_NAME}"
         )
 
+    def create_dir(self) -> None:
+        self.MEDIA_DIR.mkdir(exist_ok=True)
+
 
 config = Config()
-
-utils.create_dir(config.MEDIA_DIR)
+config.create_dir()
