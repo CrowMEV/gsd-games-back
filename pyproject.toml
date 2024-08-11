@@ -73,7 +73,7 @@ ignore_missing_imports = true
 ignore = [".git", "__pycache__", "migrations", ".venv"]
 load-plugins = ["pylint_pytest"]
 max-line-length = 79
-disable = ["C0114", "C0115", "C0116", "W1514", "W3101", "R0903"]
+disable = ["C0114", "C0115", "C0116", "W1514", "W3101", "R0903", "C0103"]
 
 # pytest
 [tool.pytest.ini_options]
