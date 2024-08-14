@@ -1,0 +1,57 @@
+services:
+  backend:
+    build: ./
+    container_name: backend
+    env_file:
+      - .env
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: always
+    command: /bin/sh run.sh
+    volumes:
+      - media:/app/media
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.backend.rule=Host(`api.gsd-games.ru`)"
+      - "traefik.http.routers.backend.entrypoints=websecure"
+      - "traefik.http.routers.backend.service=backend-service"
+      - "traefik.http.services.backend-service.loadbalancer.server.port=8000"
+
+  db:
+    image: postgres:alpine
+    container_name: postgresql
+    environment:
+      POSTGRES_DB: ${DB_NAME}
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 3s
+    depends_on:
+      - traefik
+    volumes:
+      - pg_data:/var/lib/postgresql/data/
+
+  traefik:
+    image: traefik:v3.0
+    container_name: traefik
+    ports:
+      - 80:80
+      - 443:443
+    command:
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+    labels:
+      - "traefik.enable=true"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./letsencrypt/:/letsencrypt/
+      - ./traefik_config/:/etc/traefik
+
+volumes:
+  media:
+  data:

@@ -1,0 +1,75 @@
+name: CI
+on: push
+
+jobs:
+  checking:
+    runs-on: ubuntu-latest
+    env:
+      POSTGRES_USER: ${{ secrets.DB_USER }}
+      POSTGRES_PASSWORD: ${{ secrets.DB_PASSWORD }}
+      POSTGRES_DB: ${{ secrets.DB_NAME }}
+      SECRET_KEY: ${{ secrets.SECRET_KEY }}
+      TOKEN_EXPIRE: ${{ secrets.ACCESS_TOKEN_EXPIRE_MINUTES }}
+      ALGORITHM: ${{ secrets.ALGORITHM }}
+
+    services:
+      postgres:
+        image: postgres
+        env:
+          POSTGRES_DB: ${{ env.POSTGRES_DB }}
+          POSTGRES_USER: ${{ env.POSTGRES_USER }}
+          POSTGRES_PASSWORD: ${{ env.POSTGRES_PASSWORD }}
+        ports:
+          - 5432:5432
+        options: --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - uses: actions/checkout@master
+      - name: Set up Python
+        uses: actions/setup-python@master
+        with:
+          python-version: 3.12
+          cache: "pip"
+
+      - name: Install dependencies
+        run: |
+          pip install poetry
+          poetry config virtualenvs.create false
+          poetry install --no-interaction --no-ansi
+
+      - name: Lint with pylint
+        run: poetry run pylint ./app
+
+      - name: Lint with mypy
+        run: poetry run mypy ./app
+
+      - name: Tests
+        run: |
+          poetry run pytest
+        env:
+          DB_NAME: ${{ env.POSTGRES_DB }}
+          DB_USER: ${{ env.POSTGRES_USER}}
+          DB_PASSWORD: ${{ env.POSTGRES_PASSWORD }}
+          ACCESS_TOKEN_EXPIRE_MINUTES: ${{ env.TOKEN_EXPIRE }}
+          SECRET_KEY: $ {{ env.SECRET_KEY }}
+          ALGORITHM: ${{ env.ALGORITHM }}
+  deploy:
+    if: github.ref_name=='main'
+    runs-on: ubuntu-latest
+    needs: checking
+    steps:
+      - name: Deploy
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.HOST }}
+          username: ${{ secrets.USERNAME }}
+          key: ${{ secrets.SSH }}
+          port: ${{ secrets.PORT }}
+          script: |
+            cd ${{ secrets.WORKDIR }}
+            git switch main
+            git pull
+            docker compose up --build --no-deps -d backend
