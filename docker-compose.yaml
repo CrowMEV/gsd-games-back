@@ -1,4 +1,39 @@
 services:
+  reverse-proxy:
+    image: traefik:v3.1
+    container_name: traefik
+    ports:
+      - 80:80
+      # - 443:443
+    command:
+      - --providers.docker
+      - --providers.docker.exposedbydefault=false
+    labels:
+      - "traefik.enable=true"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      # - ./.cert/:/cert
+      # - ./traefik_config/:/etc/traefik
+
+  frontend:
+    build:
+      dockerfile: ./Dockerfile.frontend
+    container_name: frontend
+    depends_on:
+      - backend
+    env_file:
+      - .env
+    restart: always
+    volumes:
+      - ../dist:/dist
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.frontend.rule=Host(`gsd-games.ru`)"
+      # - "traefik.http.routers.backend.tls=true"
+      # - "traefik.http.routers.frontend.entrypoints=websecure"
+      - "traefik.http.services.frontend-service.loadbalancer.server.port=3000"
+    command: serve -s /dist
+  
   backend:
     build: ./
     container_name: backend
@@ -10,13 +45,13 @@ services:
     restart: always
     command: /bin/sh run.sh
     volumes:
-      - media:/app/media
+      - ./media:/app/media
       - ./app:/app
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.backend.rule=Host(`api.gsd-games.ru`)"
-      - "traefik.http.routers.backend.entrypoints=websecure"
-      - "traefik.http.routers.backend.service=backend-service"
+      # - "traefik.http.routers.backend.tls=true"
+      # - "traefik.http.routers.backend.entrypoints=websecure"
       - "traefik.http.services.backend-service.loadbalancer.server.port=8000"
 
   db:
@@ -33,25 +68,9 @@ services:
       retries: 5
       start_period: 3s
     depends_on:
-      - traefik
+      - reverse-proxy
     volumes:
       - data:/var/lib/postgresql/data/
-
-  traefik:
-    image: traefik:v3.0
-    container_name: traefik
-    ports:
-      - 80:80
-      - 443:443
-    command:
-      - "--providers.docker=true"
-      - "--providers.docker.exposedbydefault=false"
-    labels:
-      - "traefik.enable=true"
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock:ro
-      - ./letsencrypt/:/letsencrypt/
-      - ./traefik_config/:/etc/traefik
 
 volumes:
   media:

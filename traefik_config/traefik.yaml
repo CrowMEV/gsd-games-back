@@ -9,6 +9,7 @@ entryPoints:
   websecure:
     address: ":443"
 
-providers:
-  docker:
-    network: traefik-network
+tls:
+  certificates:
+    - certFile: /cert/certificate_ca.crt
+      keyFile: /cert/certificate.key
