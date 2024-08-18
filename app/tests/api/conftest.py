@@ -1,18 +1,15 @@
 from datetime import timedelta
 from shutil import rmtree
-from typing import Any, AsyncIterator, Iterator
+from typing import Any, AsyncIterator
 from urllib.parse import urlsplit
 
 import pytest
 from httpx import ASGITransport, AsyncClient
-from sqlalchemy import create_engine
-from sqlalchemy.engine import Engine
 from sqlalchemy.ext.asyncio import (
     AsyncEngine,
     AsyncSession,
     create_async_engine,
 )
-from sqlalchemy.orm import Session
 
 import models
 from core.dependency import get_async_session
@@ -20,7 +17,7 @@ from core.security import create_access_token, get_password_hash
 from core.settings import config
 from main import app
 from tests import factory_model_test
-from tests.utils import tmp_database
+from tests.utils import async_tmp_database
 
 
 @pytest.fixture
@@ -28,46 +25,45 @@ def anyio_backend():
     return "asyncio"
 
 
-@pytest.fixture(scope="session", autouse=True)
-def postgres_temlate(pg_url: str) -> Iterator[str]:
+@pytest.fixture(scope="package")
+def pg_url() -> str:
+    """
+    Provides base PostgreSQL URL for creating temporary databases.
+    """
+    config.DB_HOST = "localhost"
+    return config.async_dsn  # type: ignore
+
+
+@pytest.fixture(scope="package", autouse=True)
+async def postgres_temlate(pg_url: str) -> AsyncIterator[str]:
     """
     Creates empty template database with migrations.
     """
-    with tmp_database(pg_url, db_name="api_template") as tmp_url:
-        engine = create_engine(tmp_url)
-        models.Base.metadata.create_all(bind=engine)
-        engine.dispose()
+    async with async_tmp_database(pg_url, db_name="api_template") as tmp_url:
+        engine = create_async_engine(tmp_url)
+        async with engine.begin() as conn:
+            await conn.run_sync(models.Base.metadata.create_all)
+        await engine.dispose()
         yield tmp_url
 
 
 @pytest.fixture
-def postgres(postgres_temlate: str) -> Iterator[str]:
+async def postgres(postgres_temlate: str) -> AsyncIterator[str]:
     """
     Creates empty temporary database.
     """
-    with tmp_database(
+    async with async_tmp_database(
         postgres_temlate, suffix="api", template="api_template"
     ) as tmp_url:
         yield tmp_url
 
 
 @pytest.fixture
-def db(postgres_engine: Engine) -> Iterator[Session]:
-    """
-    SQLAlchemy session bound to temporary database
-    """
-    with Session(postgres_engine) as session:
-        yield session
-
-
-@pytest.fixture
-async def async_postgres_engine(postgres: str) -> AsyncIterator[AsyncEngine]:
+async def postgres_engine(postgres: str) -> AsyncIterator[AsyncEngine]:
     """
     SQLAlchemy async engine, bound to temporary database.
     """
-    config.DB_NAME = urlsplit(postgres).path[1:]
-    config.DB_HOST = "localhost"
-    engine = create_async_engine(config.async_dsn, echo=True)  # type: ignore
+    engine = create_async_engine(postgres, echo=True)  # type: ignore
     try:
         yield engine
     finally:
@@ -75,23 +71,23 @@ async def async_postgres_engine(postgres: str) -> AsyncIterator[AsyncEngine]:
 
 
 @pytest.fixture
-async def async_db(
-    async_postgres_engine: AsyncEngine,
+async def async_session(
+    postgres_engine: AsyncEngine,
 ) -> AsyncIterator[AsyncSession]:
     """
     SQLAlchemy session bound to temporary database
     """
-    async with AsyncSession(async_postgres_engine) as session:
+    async with AsyncSession(postgres_engine) as session:
         yield session
 
 
 @pytest.fixture
-async def client(async_db: AsyncSession) -> AsyncIterator[AsyncClient]:
+async def client(async_session: AsyncSession) -> AsyncIterator[AsyncClient]:
     """
     TestClient for FastAPI
     """
     # pylint: disable=C0301
-    app.dependency_overrides[get_async_session] = lambda: async_db
+    app.dependency_overrides[get_async_session] = lambda: async_session
     async with AsyncClient(
         transport=ASGITransport(app=app), base_url="http://test"  # type: ignore
     ) as ac:
@@ -100,7 +96,7 @@ async def client(async_db: AsyncSession) -> AsyncIterator[AsyncClient]:
 
 
 @pytest.fixture
-def factory(db: Session) -> factory_model_test.FactoryProtocol:
+def factory(async_session: AsyncSession):
     """
     Create factory for factory boy
     """
@@ -147,7 +143,7 @@ def path_image():
     return config.ROOT_DIR / "tests" / "test-image.jpg"
 
 
-@pytest.fixture(scope="session", autouse=True)
+@pytest.fixture(scope="package", autouse=True)
 def media_dir():
     config.MEDIA_DIR.mkdir(exist_ok=True)
     yield
