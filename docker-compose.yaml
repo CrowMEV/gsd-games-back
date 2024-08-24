@@ -6,8 +6,10 @@ services:
       - 80:80
       # - 443:443
     command:
+      # - --log.level=DEBUG
       - --providers.docker
       - --providers.docker.exposedbydefault=false
+        
     labels:
       - "traefik.enable=true"
     volumes:
@@ -25,11 +27,11 @@ services:
       - .env
     restart: always
     volumes:
-      - ../dist:/dist
+      - ./dist:/dist
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.frontend.rule=Host(`gsd-games.ru`)"
-      # - "traefik.http.routers.backend.tls=true"
+      # - "traefik.http.routers.frontend.tls=true"
       # - "traefik.http.routers.frontend.entrypoints=websecure"
       - "traefik.http.services.frontend-service.loadbalancer.server.port=3000"
     command: serve -s /dist
@@ -67,8 +69,6 @@ services:
       timeout: 5s
       retries: 5
       start_period: 3s
-    depends_on:
-      - reverse-proxy
     volumes:
       - data:/var/lib/postgresql/data/
 
