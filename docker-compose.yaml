@@ -4,17 +4,17 @@ services:
     container_name: traefik
     ports:
       - 80:80
-      # - 443:443
+      - 443:443
     command:
       # - --log.level=DEBUG
       - --providers.docker
       - --providers.docker.exposedbydefault=false
-        
+
     labels:
       - "traefik.enable=true"
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
-      # - ./.cert/:/cert
+      - ./.cert/:/cert
       # - ./traefik_config/:/etc/traefik
 
   frontend:
@@ -35,7 +35,7 @@ services:
       # - "traefik.http.routers.frontend.entrypoints=websecure"
       - "traefik.http.services.frontend-service.loadbalancer.server.port=3000"
     command: serve -s /dist
-  
+
   backend:
     build: ./
     container_name: backend
