@@ -4,18 +4,18 @@ services:
     container_name: traefik
     ports:
       - 80:80
-      # - 443:443
+      - 443:443
     command:
       # - --log.level=DEBUG
       - --providers.docker
       - --providers.docker.exposedbydefault=false
-        
+
     labels:
       - "traefik.enable=true"
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
-      # - ./.cert/:/cert
-      # - ./traefik_config/:/etc/traefik
+      - ./.cert/:/cert
+      - ./traefik_config/:/etc/traefik
 
   frontend:
     build:
@@ -31,11 +31,11 @@ services:
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.frontend.rule=Host(`gsd-games.ru`)"
-      # - "traefik.http.routers.frontend.tls=true"
-      # - "traefik.http.routers.frontend.entrypoints=websecure"
+      - "traefik.http.routers.frontend.tls=true"
+      - "traefik.http.routers.frontend.entrypoints=websecure"
       - "traefik.http.services.frontend-service.loadbalancer.server.port=3000"
     command: serve -s /dist
-  
+
   backend:
     build: ./
     container_name: backend
@@ -52,8 +52,8 @@ services:
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.backend.rule=Host(`api.gsd-games.ru`)"
-      # - "traefik.http.routers.backend.tls=true"
-      # - "traefik.http.routers.backend.entrypoints=websecure"
+      - "traefik.http.routers.backend.tls=true"
+      - "traefik.http.routers.backend.entrypoints=websecure"
       - "traefik.http.services.backend-service.loadbalancer.server.port=8000"
 
   db:
