@@ -5,6 +5,7 @@ from typing import AsyncIterator
 import pytest
 from fastapi import FastAPI
 from httpx import ASGITransport, AsyncClient
+from sqlalchemy.engine import ScalarResult
 from sqlalchemy.ext.asyncio import (
     AsyncEngine,
     AsyncSession,
@@ -109,7 +110,7 @@ async def factory_fixture(async_session: AsyncSession):
 
     async def _factory(
         model_factory: data_factory.TypeFactory, *args, **kwargs
-    ) -> models.MODEL | list[models.MODEL]:
+    ) -> ScalarResult[models.MODEL]:
 
         return await model_factory(async_session).generate_data(
             *args, **kwargs

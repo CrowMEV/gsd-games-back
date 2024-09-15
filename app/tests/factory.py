@@ -52,7 +52,7 @@ class UserFactory(DataFactory):
                 "birth_date": kwargs.get("birth_date", fake.date_of_birth()),
                 "is_active": kwargs.get("is_active", True),
                 "role": kwargs.get(
-                    "role", random.choice([role for role in models.RoleChoice])
+                    "role", random.choice(list(models.RoleChoice))
                 ),
             }
             for _ in range(count)

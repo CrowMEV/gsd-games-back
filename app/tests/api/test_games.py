@@ -4,7 +4,6 @@ import pytest
 from fastapi import status
 from httpx import AsyncClient
 
-import models
 from tests import factory as data_factory
 
 
