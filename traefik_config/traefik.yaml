@@ -10,9 +10,11 @@ entryPoints:
     address: ":443"
 
 tls:
-  certificates:
-    - certFile: /cert/gsd_game.ru.crt
-      keyFile: /cert/gsd_game.ru.key
+  stores:
+    default:
+      defaultCertificate:
+        certFile: /cert/gsd_game.ru.crt
+        keyFile: /cert/gsd_game.ru.key
 
 providers:
   docker:

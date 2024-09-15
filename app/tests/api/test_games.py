@@ -5,26 +5,25 @@ from fastapi import status
 from httpx import AsyncClient
 
 import models
-from tests import factory_model_test
+from tests import factory as data_factory
 
 
 pytestmark = pytest.mark.anyio
 
 
 async def test_get_games(
-    client: AsyncClient,
-    factory: factory_model_test.FactoryProtocol,
+    client: AsyncClient, factory: data_factory.FactoryProtocol
 ):
-    factory(factory_model_test.GameFactory, 10)
+    await factory(data_factory.GameFactory, 10)
     response = await client.get("/games/")
     assert response.status_code == status.HTTP_200_OK
 
 
 async def test_get_game_id(
-    client: AsyncClient,
-    factory: factory_model_test.FactoryProtocol,
+    client: AsyncClient, factory: data_factory.FactoryProtocol
 ):
-    game = factory(factory_model_test.GameFactory, 1)[0]
+    games = await factory(data_factory.GameFactory)
+    game = games.one()
     response = await client.get(f"/games/{game.id}")
     assert response.status_code == status.HTTP_200_OK
 
@@ -35,12 +34,9 @@ async def test_get_game_id(
 
 
 async def test_create_game(
-    client: AsyncClient,
-    user_factory: factory_model_test.UserFactoryCallback,
+    admin_client: AsyncClient,
     path_image: Path,
 ):
-    user_dict = user_factory(models.RoleChoice.ADMIN)
-    headers = {"Authorization": f"Bearer {user_dict["token"]}"}
     data = {
         "title": "Monopoly",
         "description": "Money money money",
@@ -48,20 +44,17 @@ async def test_create_game(
         "price": 500,
     }
     with open(path_image, "rb") as file:
-        response = await client.post(
-            "/games/", data=data, files={"image": file}, headers=headers
+        response = await admin_client.post(
+            "/games/", data=data, files={"image": file}
         )
 
     assert response.status_code == status.HTTP_201_CREATED
 
 
 async def test_double_title_game(
-    client: AsyncClient,
-    user_factory: factory_model_test.UserFactoryCallback,
+    admin_client: AsyncClient,
     path_image: Path,
 ):
-    user_dict = user_factory(models.RoleChoice.ADMIN)
-    headers = {"Authorization": f"Bearer {user_dict["token"]}"}
     data = {
         "title": "Monopoly",
         "description": "Money money money",
@@ -70,11 +63,9 @@ async def test_double_title_game(
     }
     with open(path_image, "rb") as file:
 
-        await client.post(
-            "/games/", data=data, files={"image": file}, headers=headers
-        )
-        response = await client.post(
-            "/games/", data=data, files={"image": file}, headers=headers
+        await admin_client.post("/games/", data=data, files={"image": file})
+        response = await admin_client.post(
+            "/games/", data=data, files={"image": file}
         )
 
     assert response.status_code == status.HTTP_409_CONFLICT
@@ -83,19 +74,14 @@ async def test_double_title_game(
 
 
 async def test_update_game(
-    client: AsyncClient,
-    user_factory: factory_model_test.UserFactoryCallback,
-    factory: factory_model_test.FactoryProtocol,
+    admin_client: AsyncClient, factory: data_factory.FactoryProtocol
 ):
-    user_dict = user_factory(models.RoleChoice.ADMIN)
-    headers = {"Authorization": f"Bearer {user_dict["token"]}"}
 
-    game = factory(factory_model_test.GameFactory, 1)[0]
+    games = await factory(data_factory.GameFactory)
+    game = games.one()
 
     updated_data = {"description": "Description about game 1", "price": 700}
-    response = await client.patch(
-        f"/games/{game.id}", data=updated_data, headers=headers
-    )
+    response = await admin_client.patch(f"/games/{game.id}", data=updated_data)
 
     assert response.status_code == status.HTTP_200_OK
     assert response.json()["description"] == updated_data["description"]

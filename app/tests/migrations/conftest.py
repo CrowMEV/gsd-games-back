@@ -9,8 +9,8 @@ from core.settings import config
 from tests.utils import make_alembic_config, tmp_database
 
 
-@pytest.fixture(scope="package")
-def pg_url() -> str:
+@pytest.fixture(scope="package", name="pg_url")
+def pg_url_fixture() -> str:
     """
     Provides base PostgreSQL URL for creating temporary databases.
     """
@@ -18,8 +18,17 @@ def pg_url() -> str:
     return config.dsn  # type: ignore
 
 
-@pytest.fixture
-def postgres_engine(
+@pytest.fixture(name="postgres")
+def postgres_fixture(pg_url: str) -> Iterator[str]:
+    """
+    Creates empty temporary database.
+    """
+    with tmp_database(pg_url, suffix="migrations") as tmp_url:
+        yield tmp_url
+
+
+@pytest.fixture(name="postgres_engine")
+def postgres_engine_fixture(
     postgres: str,
 ) -> Iterator[Engine]:
     """
@@ -32,17 +41,8 @@ def postgres_engine(
         engine.dispose()
 
 
-@pytest.fixture
-def postgres(pg_url: str) -> Iterator[str]:
-    """
-    Creates empty temporary database.
-    """
-    with tmp_database(pg_url, suffix="migrations") as tmp_url:
-        yield tmp_url
-
-
-@pytest.fixture
-def alembic_config(postgres: str) -> Config:
+@pytest.fixture(name="alembic_config")
+def alembic_config_fixture(postgres: str) -> Config:
     """
     Alembic configuration object, bound to temporary database.
     """

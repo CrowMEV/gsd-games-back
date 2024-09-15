@@ -1,52 +1,47 @@
+from datetime import timedelta
 from pathlib import Path
 
 import pytest
+import sqlalchemy as sa
+from faker import Faker
 from fastapi import status
 from httpx import AsyncClient
+from sqlalchemy.ext.asyncio import AsyncSession
 
 import models
-from tests import factory_model_test
+from core.security import create_access_token
+from core.settings import config
+from tests import factory as data_factory
 
 
 pytestmark = pytest.mark.anyio
 
 
 async def test_get_users(
-    client: AsyncClient,
-    factory: factory_model_test.FactoryProtocol,
-    user_factory: factory_model_test.UserFactoryCallback,
+    admin_client: AsyncClient, factory: data_factory.FactoryProtocol
 ):
 
-    factory(factory_model_test.UserFactory, 10)
-    user = user_factory(models.RoleChoice.ADMIN)
-    headers = {"Authorization": f"Bearer {user["token"]}"}
-    response = await client.get("/users/", headers=headers)
+    await factory(data_factory.UserFactory, 10)
+    response = await admin_client.get("/users/")
     assert response.status_code == status.HTTP_200_OK
 
 
 async def test_get_users_user(
-    client: AsyncClient,
-    factory: factory_model_test.FactoryProtocol,
-    user_factory: factory_model_test.UserFactoryCallback,
+    user_client: AsyncClient,
+    factory: data_factory.FactoryProtocol,
 ):
 
-    factory(factory_model_test.UserFactory, 10)
-    user = user_factory(models.RoleChoice.USER)
-    headers = {"Authorization": f"Bearer {user["token"]}"}
-    response = await client.get("/users/", headers=headers)
+    await factory(data_factory.UserFactory, 10)
+    response = await user_client.get("/users/")
     assert response.status_code == status.HTTP_403_FORBIDDEN
 
 
 async def test_get_user_id(
-    client: AsyncClient, user_factory: factory_model_test.UserFactoryCallback
+    user_client: AsyncClient, async_session: AsyncSession
 ):
-
-    user_dict = user_factory(models.RoleChoice.USER)
-    user = user_dict["user"]
-    response = await client.get(
-        "/users/me",
-        headers={"Authorization": f"Bearer {user_dict["token"]}"},
-    )
+    users = await async_session.scalars(sa.select(models.User))
+    user = users.one()
+    response = await user_client.get("/users/me")
     assert response.status_code == status.HTTP_200_OK
     response_data = response.json()
     response_data.pop("birth_date")
@@ -73,17 +68,13 @@ async def test_create_user(client: AsyncClient):
 
 
 async def test_update_user(
-    client: AsyncClient, user_factory: factory_model_test.UserFactoryCallback
+    user_client: AsyncClient, async_session: AsyncSession
 ):
 
-    user_dict = user_factory(models.RoleChoice.USER)
-    user = user_dict["user"]
-    headers = {"Authorization": f"Bearer {user_dict["token"]}"}
-
     updated_data = {"name": "updateduser", "email": "user@e.com"}
-    response = await client.patch(
-        f"/users/{user.id}", json=updated_data, headers=headers
-    )
+    users = await async_session.scalars(sa.select(models.User))
+    user = users.one()
+    response = await user_client.patch(f"/users/{user.id}", json=updated_data)
 
     assert response.status_code == status.HTTP_200_OK
     assert response.json()["name"] == updated_data["name"]
@@ -91,15 +82,14 @@ async def test_update_user(
 
 
 async def test_dublicate_email(
-    client: AsyncClient,
-    user_factory: factory_model_test.UserFactoryCallback,
+    client: AsyncClient, factory: data_factory.FactoryProtocol, faker: Faker
 ):
-    user_dict = user_factory(models.RoleChoice.USER)
-    user = user_dict["user"]
+    email = faker.email()
+    await factory(data_factory.UserFactory, email=email)
     data = {
-        "name": "Bobik",
-        "email": user.email,
-        "password": "password123",
+        "name": faker.name(),
+        "email": email,
+        "password": faker.password(),
     }
     response = await client.post("/users/", json=data)
 
@@ -109,16 +99,23 @@ async def test_dublicate_email(
 
 
 async def test_dublicate_email_update(
-    client: AsyncClient, user_factory: factory_model_test.UserFactoryCallback
+    client: AsyncClient, factory: data_factory.FactoryProtocol
 ):
-    user = user_factory(models.RoleChoice.USER)["user"]
-    user_dict = user_factory(models.RoleChoice.USER)
-    user2 = user_dict["user"]
-    headers = {"Authorization": f"Bearer {user_dict["token"]}"}
 
-    data = {"email": user.email}
+    users = await factory(data_factory.UserFactory, 2)
+    user1, user2 = users.all()
+    access_token_expires = timedelta(
+        minutes=config.ACCESS_TOKEN_EXPIRE_MINUTES
+    )
+    token = create_access_token(
+        {"user_email": user1.email}, access_token_expires
+    )
+
+    data = {"email": user1.email}
     response = await client.patch(
-        f"/users/{user2.id}", json=data, headers=headers
+        f"/users/{user2.id}",
+        json=data,
+        headers={"Authorization": f"Bearer {token}"},
     )
 
     assert response.status_code == status.HTTP_409_CONFLICT
@@ -137,43 +134,43 @@ async def test_invalid_password(client: AsyncClient):
 
 
 async def test_upload_avatar(
-    client: AsyncClient,
-    user_factory: factory_model_test.UserFactoryCallback,
+    user_client: AsyncClient,
     path_image: Path,
 ):
-    user_dict = user_factory(models.RoleChoice.USER)
-    headers = {"Authorization": f"Bearer {user_dict["token"]}"}
     with open(path_image, "rb") as file:
         data = {
             "file": file,
         }
-        response = await client.post(
-            "/users/avatar/", files=data, headers=headers
-        )
+        response = await user_client.post("/users/avatar/", files=data)
     assert response.status_code == status.HTTP_200_OK
 
 
-async def test_get_token(
+async def test_login(
     client: AsyncClient,
-    user_factory: factory_model_test.UserFactoryCallback,
+    factory: data_factory.FactoryProtocol,
+    faker: Faker,
 ):
-    user_dict = user_factory(models.RoleChoice.USER)
-    user = user_dict["user"]
+    password = faker.password()
+    email = faker.email()
+    users = await factory(
+        data_factory.UserFactory, email=email, password=password
+    )
+    user = users.one()
     response = await client.post(
-        "/users/login",
-        json={"email": user.email, "password": "pass"},
+        "/users/login", json={"email": user.email, "password": password}
     )
     assert response.status_code == status.HTTP_200_OK
 
 
-async def test_get_wrong_token(
+async def test_login_with_wrong_password(
     client: AsyncClient,
-    user_factory: factory_model_test.UserFactoryCallback,
+    factory: data_factory.FactoryProtocol,
+    faker: Faker,
 ):
-    user_dict = user_factory(models.RoleChoice.USER)
-    user = user_dict["user"]
+    email = faker.email()
+    await factory(data_factory.UserFactory, email=email)
     response = await client.post(
         "/users/login",
-        json={"email": user.email, "password": "parol74588"},
+        json={"email": email, "password": faker.password()},
     )
     assert response.status_code == status.HTTP_401_UNAUTHORIZED

@@ -8,6 +8,7 @@ from urllib.parse import urlsplit, urlunsplit
 import sqlalchemy as sa
 from alembic.config import Config
 from sqlalchemy.engine.url import make_url
+from sqlalchemy.exc import ProgrammingError
 from sqlalchemy.ext.asyncio import create_async_engine
 
 from core.settings import config as project_settings
@@ -146,7 +147,11 @@ async def async_tmp_database(
         tmp_db_name = db_name
     tmp_db_url = urlsplit(str_url)
     str_url = urlunsplit(tmp_db_url._replace(path=f"/{tmp_db_name}"))
-    await async_create_database(str_url, **kwargs)
+    try:
+        await async_create_database(str_url, **kwargs)
+    except ProgrammingError:
+        await async_drop_database(str_url)
+        await async_create_database(str_url, **kwargs)
 
     try:
         yield str_url
