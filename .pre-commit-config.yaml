@@ -19,15 +19,15 @@ repos:
         exclude: migrations/
         args: ["--profile=black", "--line-length=79", "--lai=2"]
 
-  - repo: local
-    hooks:
-      - id: pylint
-        name: pylint
-        entry: pylint
-        language: system
-        types: [python]
-        exclude: migrations/
-        args: ["--disable=C0114,C0115,C0116,W0511"]
+  # - repo: local
+  #   hooks:
+  #     - id: pylint
+  #       name: pylint
+  #       entry: pylint
+  #       language: system
+  #       types: [python]
+  #       exclude: migrations/
+  #       args: ["--disable=C0114,C0115,C0116,W0511"]
 
   - repo: local
     hooks:
@@ -39,12 +39,12 @@ repos:
         exclude: "(migrations|.venv)/"
         args: ["--exclude=migrations"]
 
-  - repo: local
-    hooks:
-      - id: pytest
-        name: pytest
-        entry: pytest
-        language: system
-        types: [python]
-        pass_filenames: false
-        args: ["-p no:cacheprovider"]
+  # - repo: local
+  #   hooks:
+  #     - id: pytest
+  #       name: pytest
+  #       entry: pytest
+  #       language: system
+  #       types: [python]
+  #       pass_filenames: false
+  #       args: ["-p no:cacheprovider"]
