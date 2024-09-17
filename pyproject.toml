@@ -25,6 +25,12 @@ faker = "^28.4.1"
 pytest = "^8.3.2"
 mypy = "^1.11.2"
 
+
+[tool.poetry.group.bot.dependencies]
+aiogram = "^3.13.0"
+redis = "^5.0.8"
+pydantic-settings = "^2.4.0"
+
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
