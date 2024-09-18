@@ -14,27 +14,7 @@ services:
       - "traefik.enable=true"
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
-      - ./.cert/:/cert
-      # - ./traefik_config/:/etc/traefik
 
-  frontend:
-    build:
-      dockerfile: ./Dockerfile.frontend
-    container_name: frontend
-    depends_on:
-      - backend
-    env_file:
-      - .env
-    restart: always
-    volumes:
-      - ./dist:/dist
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.frontend.rule=Host(`gsd-games.ru`)"
-      # - "traefik.http.routers.frontend.tls=true"
-      # - "traefik.http.routers.frontend.entrypoints=websecure"
-      - "traefik.http.services.frontend-service.loadbalancer.server.port=3000"
-    command: serve -s /dist
 
   backend:
     build: ./
@@ -51,9 +31,7 @@ services:
       - ./app:/app
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.backend.rule=Host(`api.gsd-games.ru`)"
-      # - "traefik.http.routers.backend.tls=true"
-      # - "traefik.http.routers.backend.entrypoints=websecure"
+      - "traefik.http.routers.backend.rule=Host(`localhost`)"
       - "traefik.http.services.backend-service.loadbalancer.server.port=8000"
 
   db:
@@ -71,11 +49,13 @@ services:
       start_period: 3s
     volumes:
       - data:/var/lib/postgresql/data/
-      
+    ports: -5432:5432
+
   redis:
     image: redis:alpine
-    container_name: redis
-
+    restart: always
+    ports:
+      - "6379:6379"
 
 volumes:
   media:
