@@ -15,7 +15,6 @@ services:
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
 
-
   backend:
     build: ./
     container_name: backend
@@ -27,7 +26,6 @@ services:
     restart: always
     command: /bin/sh run.sh
     volumes:
-      - ./media:/app/media
       - ./app:/app
     labels:
       - "traefik.enable=true"
@@ -49,7 +47,8 @@ services:
       start_period: 3s
     volumes:
       - data:/var/lib/postgresql/data/
-    ports: -5432:5432
+    ports:
+      - 5432:5432
 
   redis:
     image: redis:alpine
@@ -58,5 +57,4 @@ services:
       - "6379:6379"
 
 volumes:
-  media:
   data:
