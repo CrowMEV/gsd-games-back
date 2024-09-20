@@ -14,7 +14,7 @@ services:
       - "traefik.enable=true"
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
-      - ./.cert/:/cert
+      # - ./.cert/:/cert
       # - ./traefik_config/:/etc/traefik
 
   frontend:
@@ -37,7 +37,11 @@ services:
     command: serve -s /dist
 
   backend:
-    build: ./
+    build:
+      context: ./Dockerfile.back.prod
+      args:
+        - USERNAME=${DOCKER_USER}
+        - USER_ID=${USER_ID}
     container_name: backend
     env_file:
       - .env
