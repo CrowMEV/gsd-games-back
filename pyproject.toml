@@ -3,7 +3,7 @@ package-mode = false
 
 [tool.poetry.dependencies]
 python = "^3.12"
-fastapi = "^0.114.0"
+fastapi = "^0.115.0"
 sqlalchemy = {extras = ["asyncio"], version = "^2.0.32"}
 pydantic = {extras = ["email"], version = "^2.8.2"}
 pydantic-settings = "^2.4.0"
@@ -30,6 +30,7 @@ mypy = "^1.11.2"
 aiogram = "^3.13.0"
 redis = "^5.0.8"
 pydantic-settings = "^2.4.0"
+httpx = "^0.27.2"
 
 [build-system]
 requires = ["poetry-core"]

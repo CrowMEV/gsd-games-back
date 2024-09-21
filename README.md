@@ -1,3 +1,4 @@
+[![CI](https://github.com/CrowMEV/gsd-games-back/actions/workflows/actions.yaml/badge.svg)](https://github.com/CrowMEV/gsd-games-back/actions/workflows/actions.yaml)
 # GSD-games
 
 ## Настройка проекта
