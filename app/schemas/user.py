@@ -32,17 +32,20 @@ class User(BaseModel):
     email: EmailStr
     name: str
     avatar: str = ""
+    phone: str = ""
     birth_date: datetime | None = None
     is_active: bool = True
 
 
 class CreateUser(User):
     password: Password
+    phone: str = ""
 
 
 class UserResponse(User):
     id: int
     role: RoleChoice
+    phone: str
     model_config = ConfigDict(from_attributes=True)
 
 
@@ -52,3 +55,4 @@ class UpdateUser(BaseModel):
     name: str | None = None
     avatar: str | None = None
     birth_date: datetime | None = None
+    phone: str | None = None
