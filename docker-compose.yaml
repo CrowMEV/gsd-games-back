@@ -39,9 +39,9 @@ services:
   backend:
     build:
       dockerfile: ./Dockerfile.back.prod
-      args:
-        - USERNAME=${DOCKER_USER}
-        - USER_ID=${USER_ID}
+      # args:
+      #   - USERNAME=${DOCKER_USER}
+      #   - USER_ID=${USER_ID}
     container_name: backend
     env_file:
       - .env
