@@ -39,8 +39,9 @@ async def test_create_game(
     data = {
         "title": "Monopoly",
         "description": "Money money money",
-        "rule_description": "mercilessly",
-        "price": 500,
+        "rules": "mercilessly",
+        "min_people": 2,
+        "max_people": 10,
     }
     with open(path_image, "rb") as file:
         response = await admin_client.post(
@@ -57,8 +58,9 @@ async def test_double_title_game(
     data = {
         "title": "Monopoly",
         "description": "Money money money",
-        "rule_description": "mercilessly",
-        "price": 500,
+        "rules": "mercilessly",
+        "min_people": 3,
+        "max_people": 11,
     }
     with open(path_image, "rb") as file:
 
@@ -79,9 +81,12 @@ async def test_update_game(
     games = await factory(data_factory.GameFactory)
     game = games.one()
 
-    updated_data = {"description": "Description about game 1", "price": 700}
+    updated_data = {
+        "description": "Description about game",
+        "rules": "mercilessly",
+    }
     response = await admin_client.patch(f"/games/{game.id}", data=updated_data)
 
     assert response.status_code == status.HTTP_200_OK
     assert response.json()["description"] == updated_data["description"]
-    assert response.json()["price"] == updated_data["price"]
+    assert response.json()["rules"] == updated_data["rules"]
