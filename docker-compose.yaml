@@ -38,7 +38,7 @@ services:
 
   backend:
     build:
-      context: ./Dockerfile.back.prod
+      dockerfile: ./Dockerfile.back.prod
       args:
         - USERNAME=${DOCKER_USER}
         - USER_ID=${USER_ID}
