@@ -18,14 +18,15 @@ class RoleChoice(enum.Enum):
 class User(Base):
     __tablename__ = "users"
     id: Mapped[int] = mapped_column(primary_key=True)
-    password: Mapped[str]
     name: Mapped[str] = mapped_column(sa.String(length=50))
+    password: Mapped[str]
     email: Mapped[str] = mapped_column(
         sa.String(length=50), unique=True, index=True
     )
+    phone: Mapped[str]
     avatar: Mapped[str] = mapped_column(default="")
     birth_date: Mapped[datetime.date] = mapped_column(Date, nullable=True)  # type: ignore
-    is_active: Mapped[bool] = mapped_column(server_default=sa.true())
     role: Mapped[RoleChoice] = mapped_column(
         default=RoleChoice.USER, server_default=RoleChoice.USER.name
     )
+    is_active: Mapped[bool] = mapped_column(server_default=sa.true())
