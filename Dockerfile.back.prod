@@ -1,9 +1,9 @@
 # syntax=docker/dockerfile:1
 FROM python:3.12-alpine
 
-ARG USERNAME
-ARG USER_ID
-ARG GROUP_ID=$USER_ID
+# ARG USERNAME
+# ARG USER_ID
+# ARG GROUP_ID=$USER_ID
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONBUFFERED=1 \ 
@@ -12,9 +12,13 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 
 COPY pyproject.toml poetry.lock ./
 
-RUN addgroup -S --gid $GROUP_ID $USERNAME \
-    && adduser -S --uid $USER_ID -G $USERNAME $USERNAME  --disabled-password \
-    && pip install poetry && \
+# RUN addgroup -S --gid $GROUP_ID $USERNAME \
+#     && adduser -S --uid $USER_ID -G $USERNAME $USERNAME  --disabled-password \
+#     && pip install poetry && \
+#     poetry config virtualenvs.create false && \
+#     poetry install --only main --no-interaction
+
+RUN pip install poetry && \
     poetry config virtualenvs.create false && \
     poetry install --only main --no-interaction
 
@@ -22,4 +26,4 @@ EXPOSE 8000
 
 WORKDIR /app
 
-USER $USERNAME
+# USER $USERNAME
