@@ -9,6 +9,8 @@ class Game(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     title: Mapped[str] = mapped_column(sa.String(length=30), unique=True)
     description: Mapped[str]
-    rule_description: Mapped[str]
-    price: Mapped[int]
+    rules: Mapped[str]
     image: Mapped[str]
+    min_people: Mapped[int]
+    max_people: Mapped[int]
+    is_active: Mapped[bool] = mapped_column(server_default=sa.true())

@@ -73,11 +73,11 @@ class GameFactory(DataFactory):
             {
                 "title": kwargs.get("title", fake.word()),
                 "description": kwargs.get("description", fake.text()),
-                "rule_description": kwargs.get(
-                    "rule_description", fake.text()
-                ),
-                "price": kwargs.get("price", fake.pyint(min_value=1)),
+                "rules": kwargs.get("rules", fake.text()),
                 "image": kwargs.get("image", "media/test-image.jpg"),
+                "min_people": kwargs.get("min_people", fake.pyint()),
+                "max_people": kwargs.get("max_people", fake.pyint()),
+                "is_active": kwargs.get("is_active", fake.pybool()),
             }
             for _ in range(count)
         )
