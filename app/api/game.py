@@ -1,3 +1,5 @@
+from typing import Annotated
+
 import fastapi as fa
 
 from core import dependency
@@ -38,9 +40,11 @@ async def get_game_id(game_id: int, session: dependency.AsyncSessionDepency):
 )
 async def create_game(
     session: dependency.AsyncSessionDepency,
+    image: Annotated[fa.UploadFile, fa.File()],
     game: schema_game.GameCreate = fa.Depends(),
 ):
     data = game.__dict__
+    data["image"] = image
 
     result = await crud_game.create_or_update_game(
         session, model_game.Game, data, common_crud.create_item
@@ -62,6 +66,7 @@ async def create_game(
 async def update_game(
     session: dependency.AsyncSessionDepency,
     game_id: int,
+    image: Annotated[fa.UploadFile, fa.File()] | None = None,
     game_data: schema_game.GameUpdate = fa.Depends(),
 ):
     upload_data = {
@@ -69,7 +74,8 @@ async def update_game(
         for key, value in game_data.__dict__.items()
         if value is not None
     }
-
+    if image is not None:
+        upload_data["image"] = image
     upload_data["id"] = game_id
     result = await crud_game.create_or_update_game(
         session, model_game.Game, upload_data, common_crud.update_item

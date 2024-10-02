@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 
-from fastapi import Form, UploadFile
+import fastapi as fa
 from pydantic import BaseModel, ConfigDict
 
 
@@ -21,20 +21,18 @@ class GameResponse(Game):
 
 @dataclass
 class GameCreate:
-    title: str = Form(...)
-    description: str = Form(...)
-    rules: str = Form(...)
-    image: UploadFile = Form(...)
-    min_people: int = Form(...)
-    max_people: int = Form(...)
+    title: str = fa.Form(...)
+    description: str = fa.Form(...)
+    rules: str = fa.Form(...)
+    min_people: int = fa.Form(...)
+    max_people: int = fa.Form(...)
 
 
 @dataclass
 class GameUpdate:
-    title: str = Form(default=None)
-    description: str = Form(default=None)
-    rules: str = Form(default=None)
-    image: UploadFile = Form(default=None)
-    min_people: int = Form(default=None)
-    max_people: int = Form(default=None)
-    is_active: bool = Form(default=None)
+    title: str = fa.Form(default=None)
+    description: str = fa.Form(default=None)
+    rules: str = fa.Form(default=None)
+    min_people: int = fa.Form(default=None)
+    max_people: int = fa.Form(default=None)
+    is_active: bool = fa.Form(default=None)
