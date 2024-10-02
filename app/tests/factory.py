@@ -48,7 +48,7 @@ class UserFactory(DataFactory):
                 "password": get_password_hash(
                     kwargs.get("password", fake.password())
                 ),
-                "phone": kwargs.get("phone", fake.phone_number()),
+                "phone": kwargs.get("phone", ""),
                 "name": kwargs.get("name", fake.name()),
                 "birth_date": kwargs.get("birth_date", fake.date_of_birth()),
                 "is_active": kwargs.get("is_active", True),

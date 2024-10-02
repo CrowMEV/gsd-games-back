@@ -23,7 +23,7 @@ class User(Base):
     email: Mapped[str] = mapped_column(
         sa.String(length=50), unique=True, index=True
     )
-    phone: Mapped[str]
+    phone: Mapped[str] = mapped_column(sa.String(10), default="")
     avatar: Mapped[str] = mapped_column(default="")
     birth_date: Mapped[datetime.date] = mapped_column(Date, nullable=True)  # type: ignore
     role: Mapped[RoleChoice] = mapped_column(
