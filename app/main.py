@@ -8,7 +8,7 @@ from fastapi.openapi.utils import get_openapi
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 
-from api import game, user
+from api import game, office, user
 from core.dependency import secure_docs
 from core.settings import config
 
@@ -70,3 +70,4 @@ if not config.DEBUG:
 
 app.include_router(user.router)
 app.include_router(game.router)
+app.include_router(office.router)

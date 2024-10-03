@@ -86,6 +86,25 @@ class GameFactory(DataFactory):
         return await self.get_data()
 
 
+class OfficeFactory(DataFactory):
+    def __init__(self, session: AsyncSession) -> None:
+        super().__init__(session)
+        self.model = models.Office
+
+    async def generate_data(
+        self, count=1, **kwargs
+    ) -> ScalarResult[models.Office]:
+        self.list_data.extend(
+            {
+                "city": kwargs.get("city", fake.city()),
+                "address": kwargs.get("address", fake.address()),
+            }
+            for _ in range(count)
+        )
+        await self.write_to_db()
+        return await self.get_data()
+
+
 FACTORY = DataFactory
 
 TypeFactory = Type[FACTORY]
