@@ -33,8 +33,8 @@ async def create_or_update_game(
     if image:
         game_id = data.get("id")
         if game_id:
-            game = await get_item_id(session, model, game_id)
-            Path(game.image).unlink()  # type:ignore[attr-defined]
+            game: Game = await get_item_id(session, model, game_id)
+            Path(game.image).unlink()
 
         data["image"] = write_file(
             image.filename,
