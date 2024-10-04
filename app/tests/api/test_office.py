@@ -9,7 +9,7 @@ pytestmark = pytest.mark.anyio
 
 
 async def test_get_office(
-    admin_client: AsyncClient, factory: data_factory.FactoryProtocol
+    admin_client: AsyncClient, factory: data_factory.FactoryCallback
 ):
     await factory(data_factory.OfficeFactory, 10)
     response = await admin_client.get("/offices/")
@@ -17,7 +17,7 @@ async def test_get_office(
 
 
 async def test_get_office_id(
-    admin_client: AsyncClient, factory: data_factory.FactoryProtocol
+    admin_client: AsyncClient, factory: data_factory.FactoryCallback
 ):
     offices = await factory(data_factory.OfficeFactory)
     office = offices.one()
@@ -53,7 +53,7 @@ async def test_create_double_address(admin_client: AsyncClient):
 
 
 async def test_update_office(
-    admin_client: AsyncClient, factory: data_factory.FactoryProtocol
+    admin_client: AsyncClient, factory: data_factory.FactoryCallback
 ):
     offices = await factory(data_factory.OfficeFactory)
     office = offices.one()
@@ -72,7 +72,7 @@ async def test_update_office(
 
 
 async def test_double_update_office(
-    admin_client: AsyncClient, factory: data_factory.FactoryProtocol
+    admin_client: AsyncClient, factory: data_factory.FactoryCallback
 ):
     offices = await factory(data_factory.OfficeFactory)
     office = offices.one()

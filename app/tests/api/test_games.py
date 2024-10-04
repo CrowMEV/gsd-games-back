@@ -11,7 +11,7 @@ pytestmark = pytest.mark.anyio
 
 
 async def test_get_games(
-    client: AsyncClient, factory: data_factory.FactoryProtocol
+    client: AsyncClient, factory: data_factory.FactoryCallback
 ):
     await factory(data_factory.GameFactory, 10)
     response = await client.get("/games/")
@@ -19,7 +19,7 @@ async def test_get_games(
 
 
 async def test_get_game_id(
-    client: AsyncClient, factory: data_factory.FactoryProtocol
+    client: AsyncClient, factory: data_factory.FactoryCallback
 ):
     games = await factory(data_factory.GameFactory)
     game = games.one()
@@ -75,7 +75,7 @@ async def test_double_title_game(
 
 
 async def test_update_game(
-    admin_client: AsyncClient, factory: data_factory.FactoryProtocol
+    admin_client: AsyncClient, factory: data_factory.FactoryCallback
 ):
 
     games = await factory(data_factory.GameFactory)

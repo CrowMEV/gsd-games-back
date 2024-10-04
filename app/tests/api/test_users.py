@@ -18,7 +18,7 @@ pytestmark = pytest.mark.anyio
 
 
 async def test_get_users(
-    admin_client: AsyncClient, factory: data_factory.FactoryProtocol
+    admin_client: AsyncClient, factory: data_factory.FactoryCallback
 ):
 
     await factory(data_factory.UserFactory, 10)
@@ -28,7 +28,7 @@ async def test_get_users(
 
 async def test_get_users_user(
     user_client: AsyncClient,
-    factory: data_factory.FactoryProtocol,
+    factory: data_factory.FactoryCallback,
 ):
 
     await factory(data_factory.UserFactory, 10)
@@ -82,7 +82,7 @@ async def test_update_user(
 
 
 async def test_dublicate_email(
-    client: AsyncClient, factory: data_factory.FactoryProtocol, faker: Faker
+    client: AsyncClient, factory: data_factory.FactoryCallback, faker: Faker
 ):
     email = faker.email()
     await factory(data_factory.UserFactory, email=email)
@@ -99,7 +99,7 @@ async def test_dublicate_email(
 
 
 async def test_dublicate_email_update(
-    client: AsyncClient, factory: data_factory.FactoryProtocol
+    client: AsyncClient, factory: data_factory.FactoryCallback
 ):
 
     users = await factory(data_factory.UserFactory, 2)
@@ -147,7 +147,7 @@ async def test_upload_avatar(
 
 async def test_login(
     client: AsyncClient,
-    factory: data_factory.FactoryProtocol,
+    factory: data_factory.FactoryCallback,
     faker: Faker,
 ):
     password = faker.password()
@@ -164,7 +164,7 @@ async def test_login(
 
 async def test_login_with_wrong_password(
     client: AsyncClient,
-    factory: data_factory.FactoryProtocol,
+    factory: data_factory.FactoryCallback,
     faker: Faker,
 ):
     email = faker.email()

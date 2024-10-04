@@ -1,5 +1,5 @@
 import random
-from typing import Any, Protocol, Type
+from typing import Any, Awaitable, Callable, ParamSpec, Type, TypeVar
 
 import sqlalchemy as sa
 from faker import Faker
@@ -29,8 +29,10 @@ class DataFactory:
         await self.session.commit()
         self.session.expire_all()
 
-    async def get_data(self):
-        data = await self.session.scalars(sa.select(self.model))
+    async def get_data(self) -> ScalarResult[models.MODEL]:
+        data = await self.session.scalars(
+            sa.select(self.model)  # type:ignore[arg-type]
+        )
         return data
 
 
@@ -105,15 +107,9 @@ class OfficeFactory(DataFactory):
         return await self.get_data()
 
 
-FACTORY = DataFactory
+P = ParamSpec("P")
+FACTORY = TypeVar("FACTORY", bound=DataFactory)
+
 
 TypeFactory = Type[FACTORY]
-
-
-class FactoryProtocol(Protocol):
-    async def __call__(
-        self,
-        fabric_model: TypeFactory,
-        *args: Any,
-        **kwargs: Any,
-    ) -> ScalarResult[models.MODEL]: ...
+FactoryCallback = Callable[P, Awaitable[ScalarResult[models.MODEL]]]

@@ -121,7 +121,7 @@ async def factory_fixture(async_session: AsyncSession):
 
 @pytest.fixture(name="admin_client")
 async def admin_client_fixture(
-    factory: data_factory.FactoryProtocol, test_app: FastAPI
+    factory: data_factory.FactoryCallback, test_app: FastAPI
 ):
 
     users = await factory(
@@ -146,7 +146,7 @@ async def admin_client_fixture(
 
 @pytest.fixture(name="user_client")
 async def user_client_fixture(
-    factory: data_factory.FactoryProtocol, test_app: FastAPI
+    factory: data_factory.FactoryCallback, test_app: FastAPI
 ):
 
     users = await factory(
