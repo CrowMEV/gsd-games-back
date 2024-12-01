@@ -6,9 +6,9 @@ from fastapi import status
 from fastapi.exceptions import HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 
+import crud.user as user_crud
 import models
 from core.settings import config
-from crud.user import get_user
 
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
@@ -22,12 +22,11 @@ def get_password_hash(password: str) -> str:
 async def authenticate_user(
     session: AsyncSession, email: str, password: str
 ) -> models.User:
-    user = await get_user(session, email)
+    user = await user_crud.User(session).get_user(email)
     if not user or not verify_password(password, user.password):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Incorrect username or password",
-            headers={"WWW-Authenticate": "Bearer"},
         )
     return user
 

@@ -1,14 +1,12 @@
-from datetime import timedelta
 from pathlib import Path
 
 import fastapi as fa
+from fastapi.responses import JSONResponse
 
-from core import dependency, security
-from core.settings import config
+import crud.user as cu
+import models
+from core import cookie, dependency, security
 from core.utils import write_file
-from crud import common as common_crud
-from crud import user as crud_user
-from models import user as model_user
 from schemas import user as schema_user
 
 
@@ -24,37 +22,36 @@ async def create_upload_avatar(
     user: dependency.GetCurrentUser,
     file: fa.UploadFile,
 ):
-    db_user = await crud_user.get_user(session, user.email)
-    if not db_user:
-        raise fa.HTTPException(
-            status_code=fa.status.HTTP_404_NOT_FOUND, detail="User not found"
-        )
-    if db_user.avatar != "":
-        file_path = Path(db_user.avatar)
+    if user.avatar != "":
+        file_path = Path(user.avatar)
         file_path.unlink()
 
-    db_user.avatar = write_file(
+    user.avatar = write_file(
         file.filename,  # type: ignore
         await file.read(),
     )
     await session.commit()
-    await session.refresh(db_user)
-    return db_user
+    await session.refresh(user)
+    return user
 
 
-@router.post("/login", response_model=schema_user.Token)
-async def login_for_access_token(
+@router.post("/login/", response_class=JSONResponse)
+async def login(
     session: dependency.AsyncSessionDepency,
     data: schema_user.UserLogin,
 ):
     user = await security.authenticate_user(session, **data.model_dump())
-    access_token_expires = timedelta(
-        minutes=config.ACCESS_TOKEN_EXPIRE_MINUTES
-    )
-    access_token = security.create_access_token(
-        {"user_email": user.email}, access_token_expires
-    )
-    return schema_user.Token(token=access_token)
+    access_token = security.create_access_token({"user_email": user.email})
+    response = JSONResponse(content="OK", status_code=fa.status.HTTP_200_OK)
+    cookie.set_cookie(response, access_token)
+    return response
+
+
+@router.post("/logout/", response_class=JSONResponse)
+async def logout():
+    response = JSONResponse(content="OK", status_code=fa.status.HTTP_200_OK)
+    cookie.drop_cookie(response)
+    return response
 
 
 @router.post(
@@ -63,48 +60,48 @@ async def login_for_access_token(
     status_code=fa.status.HTTP_201_CREATED,
 )
 async def create_user(
-    user: schema_user.CreateUser,
+    user_data: schema_user.CreateUser,
     session: dependency.AsyncSessionDepency,
 ):
-    data = user.model_dump()
+    data = user_data.model_dump()
     data["password"] = security.get_password_hash(data["password"])
-    result = await crud_user.create_or_update_user(
-        session, model_user.User, data, common_crud.create_item
-    )
-    return result
+    user = await cu.User(session).create_or_update("create", data)
+    await session.commit()
+    await session.refresh(user)
+    return user
 
 
 @router.get(
     "/",
     response_model=list[schema_user.UserResponse],
     dependencies=[
-        fa.Depends(dependency.RoleChecker([model_user.RoleChoice.ADMIN]))
+        fa.Depends(dependency.RoleChecker([models.RoleChoice.ADMIN]))
     ],
 )
 async def get_users(session: dependency.AsyncSessionDepency):
-    return await common_crud.get_items(session, model_user.User)
+    return await cu.User(session).get_items()
 
 
-@router.get("/me", response_model=schema_user.UserResponse)
+@router.get("/me/", response_model=schema_user.UserResponse)
 async def get_user_id(user: dependency.GetCurrentUser):
     return user
 
 
 @router.patch(
-    "/{user_id}",
+    "/{user_id}/",
     response_model=schema_user.UserResponse,
     dependencies=[fa.Depends(dependency.get_current_active_user)],
 )
 async def update_user(
     user_id: int,
-    user: schema_user.UpdateUser,
+    user_data: schema_user.UpdateUser,
     session: dependency.AsyncSessionDepency,
 ):
-    data = user.model_dump(exclude_unset=True)
+    data = user_data.model_dump(exclude_unset=True)
     if data.get("password"):
         data["password"] = security.get_password_hash(data["password"])
     data["id"] = user_id
-    result = await crud_user.create_or_update_user(
-        session, model_user.User, data, common_crud.update_item
-    )
-    return result
+    user = await cu.User(session).create_or_update("update", data)
+    await session.commit()
+    await session.refresh(user)
+    return user

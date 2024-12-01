@@ -14,7 +14,6 @@ class RoleChoice(enum.Enum):
     ADMIN = "admin"
 
 
-# pylint: disable=C0301
 class User(Base):
     __tablename__ = "users"
     id: Mapped[int] = mapped_column(primary_key=True)
@@ -25,7 +24,8 @@ class User(Base):
     )
     phone: Mapped[str] = mapped_column(sa.String(10), default="")
     avatar: Mapped[str] = mapped_column(default="")
-    birth_date: Mapped[datetime.date] = mapped_column(Date, nullable=True)  # type: ignore
+    # pylint: disable=C0301
+    birth_date: Mapped[datetime.date] = mapped_column(Date, nullable=True)  # type: ignore[valid-type]
     role: Mapped[RoleChoice] = mapped_column(
         default=RoleChoice.USER, server_default=RoleChoice.USER.name
     )

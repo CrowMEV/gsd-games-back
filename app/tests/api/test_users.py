@@ -1,11 +1,11 @@
-from datetime import timedelta
 from pathlib import Path
+from typing import Sequence
 
 import pytest
 import sqlalchemy as sa
 from faker import Faker
 from fastapi import status
-from httpx import AsyncClient
+from httpx import AsyncClient, Cookies
 from sqlalchemy.ext.asyncio import AsyncSession
 
 import models
@@ -41,7 +41,7 @@ async def test_get_user_id(
 ):
     users = await async_session.scalars(sa.select(models.User))
     user = users.one()
-    response = await user_client.get("/users/me")
+    response = await user_client.get("/users/me/")
     assert response.status_code == status.HTTP_200_OK
     response_data = response.json()
     response_data.pop("birth_date")
@@ -74,7 +74,7 @@ async def test_update_user(
     updated_data = {"name": "updateduser", "email": "user@e.com"}
     users = await async_session.scalars(sa.select(models.User))
     user = users.one()
-    response = await user_client.patch(f"/users/{user.id}", json=updated_data)
+    response = await user_client.patch(f"/users/{user.id}/", json=updated_data)
 
     assert response.status_code == status.HTTP_200_OK
     assert response.json()["name"] == updated_data["name"]
@@ -99,23 +99,23 @@ async def test_dublicate_email(
 
 
 async def test_dublicate_email_update(
-    client: AsyncClient, factory: data_factory.FactoryCallback
+    client: AsyncClient,
+    factory: data_factory.FactoryCallback,
+    async_session: AsyncSession,
 ):
 
     users = await factory(data_factory.UserFactory, 2)
-    user1, user2 = users.all()
-    access_token_expires = timedelta(
-        minutes=config.ACCESS_TOKEN_EXPIRE_MINUTES
-    )
-    token = create_access_token(
-        {"user_email": user1.email}, access_token_expires
-    )
-
+    user1, user2 = users
+    await async_session.refresh(user1)
+    await async_session.refresh(user2)
+    token = create_access_token({"user_email": user1.email})
+    cookie = Cookies()
+    cookie.set(config.COOKIE_NAME, token)
+    client.cookies = cookie
     data = {"email": user1.email}
     response = await client.patch(
-        f"/users/{user2.id}",
+        f"/users/{user2.id}/",
         json=data,
-        headers={"Authorization": f"Bearer {token}"},
     )
 
     assert response.status_code == status.HTTP_409_CONFLICT
@@ -152,12 +152,12 @@ async def test_login(
 ):
     password = faker.password()
     email = faker.email()
-    users = await factory(
+    user = await factory(
         data_factory.UserFactory, email=email, password=password
     )
-    user = users.one()
+    assert not isinstance(user, Sequence)
     response = await client.post(
-        "/users/login", json={"email": user.email, "password": password}
+        "/users/login/", json={"email": user.email, "password": password}
     )
     assert response.status_code == status.HTTP_200_OK
 
@@ -170,7 +170,7 @@ async def test_login_with_wrong_password(
     email = faker.email()
     await factory(data_factory.UserFactory, email=email)
     response = await client.post(
-        "/users/login",
+        "/users/login/",
         json={"email": email, "password": faker.password()},
     )
     assert response.status_code == status.HTTP_401_UNAUTHORIZED
