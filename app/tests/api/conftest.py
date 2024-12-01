@@ -1,11 +1,9 @@
-from datetime import timedelta
 from shutil import rmtree
-from typing import AsyncIterator
+from typing import AsyncIterator, Sequence
 
 import pytest
 from fastapi import FastAPI
-from httpx import ASGITransport, AsyncClient
-from sqlalchemy.engine import ScalarResult
+from httpx import ASGITransport, AsyncClient, Cookies
 from sqlalchemy.ext.asyncio import (
     AsyncEngine,
     AsyncSession,
@@ -15,7 +13,7 @@ from sqlalchemy.ext.asyncio import (
 import models
 import tests.factory as data_factory
 from core.dependency import get_async_session
-from core.security import create_access_token, get_password_hash
+from core.security import create_access_token
 from core.settings import config
 from main import app
 from tests.utils import async_tmp_database
@@ -94,27 +92,27 @@ async def client_fixture(test_app: FastAPI) -> AsyncIterator[AsyncClient]:
     """
     TestClient for FastAPI
     """
-    # pylint: disable=C0301
 
     async with AsyncClient(
-        transport=ASGITransport(app=test_app), base_url="http://test"  # type: ignore
+        transport=ASGITransport(app=test_app), base_url="http://test"
     ) as ac:
         yield ac
 
 
 @pytest.fixture(name="factory")
-async def factory_fixture(async_session: AsyncSession):
+async def factory_fixture(
+    async_session: AsyncSession,
+) -> data_factory.FactoryCallback:
     """
     Create factory data
     """
 
     async def _factory(
         model_factory: data_factory.TypeFactory, *args, **kwargs
-    ) -> ScalarResult[models.MODEL]:
-
-        return await model_factory(async_session).generate_data(
-            *args, **kwargs
-        )
+    ) -> models.MODEL | Sequence[models.MODEL]:
+        factory_ = model_factory(async_session)
+        await factory_.generate_data(*args, **kwargs)
+        return await factory_.commit()
 
     return _factory
 
@@ -124,23 +122,20 @@ async def admin_client_fixture(
     factory: data_factory.FactoryCallback, test_app: FastAPI
 ):
 
-    users = await factory(
+    user = await factory(
         data_factory.UserFactory,
-        password=get_password_hash("pass"),
+        password="password123",
+        email="test-admin@email.org",
         role=models.RoleChoice.ADMIN,
     )
-    user = users.one()
-    access_token_expires = timedelta(
-        minutes=config.ACCESS_TOKEN_EXPIRE_MINUTES
-    )
-    token = create_access_token(
-        {"user_email": user.email}, access_token_expires
-    )
+    assert not isinstance(user, Sequence)
+    token = create_access_token({"user_email": user.email})
     async with AsyncClient(
-        transport=ASGITransport(app=test_app),
-        base_url="http://test",
-        headers={"Authorization": f"Bearer {token}"},
+        transport=ASGITransport(app=test_app), base_url="http://test"
     ) as ac:
+        cookie = Cookies()
+        cookie.set(config.COOKIE_NAME, token)
+        ac.cookies = cookie
         yield ac
 
 
@@ -149,23 +144,20 @@ async def user_client_fixture(
     factory: data_factory.FactoryCallback, test_app: FastAPI
 ):
 
-    users = await factory(
+    user = await factory(
         data_factory.UserFactory,
-        password=get_password_hash("pass"),
+        password="password123",
+        email="test-user@email.org",
         role=models.RoleChoice.USER,
     )
-    user = users.one()
-    access_token_expires = timedelta(
-        minutes=config.ACCESS_TOKEN_EXPIRE_MINUTES
-    )
-    token = create_access_token(
-        {"user_email": user.email}, access_token_expires
-    )
+    assert not isinstance(user, Sequence)
+    token = create_access_token({"user_email": user.email})
     async with AsyncClient(
-        transport=ASGITransport(app=test_app),
-        base_url="http://test",
-        headers={"Authorization": f"Bearer {token}"},
+        transport=ASGITransport(app=test_app), base_url="http://test"
     ) as ac:
+        cookie = Cookies()
+        cookie.set(config.COOKIE_NAME, token)
+        ac.cookies = cookie
         yield ac
 
 

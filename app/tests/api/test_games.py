@@ -1,4 +1,5 @@
 from pathlib import Path
+from typing import Sequence
 
 import pytest
 from fastapi import status
@@ -21,9 +22,9 @@ async def test_get_games(
 async def test_get_game_id(
     client: AsyncClient, factory: data_factory.FactoryCallback
 ):
-    games = await factory(data_factory.GameFactory)
-    game = games.one()
-    response = await client.get(f"/games/{game.id}")
+    game = await factory(data_factory.GameFactory)
+    assert not isinstance(game, Sequence)
+    response = await client.get(f"/games/{game.id}/")
     assert response.status_code == status.HTTP_200_OK
 
     response_data = response.json()
@@ -78,14 +79,16 @@ async def test_update_game(
     admin_client: AsyncClient, factory: data_factory.FactoryCallback
 ):
 
-    games = await factory(data_factory.GameFactory)
-    game = games.one()
+    game = await factory(data_factory.GameFactory)
+    assert not isinstance(game, Sequence)
 
     updated_data = {
         "description": "Description about game",
         "rules": "mercilessly",
     }
-    response = await admin_client.patch(f"/games/{game.id}", data=updated_data)
+    response = await admin_client.patch(
+        f"/games/{game.id}/", data=updated_data
+    )
 
     assert response.status_code == status.HTTP_200_OK
     assert response.json()["description"] == updated_data["description"]

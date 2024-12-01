@@ -2,12 +2,10 @@ from typing import Annotated
 
 import fastapi as fa
 
+import crud.game as cg
+import models
 from core import dependency
-from crud import common as common_crud
-from crud import game as crud_game
-from models import game as model_game
-from models import user as model_user
-from schemas import game as schema_game
+from schemas import game as sg
 
 
 router = fa.APIRouter(
@@ -16,24 +14,24 @@ router = fa.APIRouter(
 )
 
 
-@router.get("/", response_model=list[schema_game.Game])
+@router.get("/", response_model=list[sg.Game])
 async def get_games(session: dependency.AsyncSessionDepency):
-    return await common_crud.get_items(session, model_game.Game)
+    return await cg.Game(session).get_items()
 
 
-@router.get("/{game_id}", response_model=schema_game.Game)
+@router.get("/{game_id}/", response_model=sg.Game)
 async def get_game_id(game_id: int, session: dependency.AsyncSessionDepency):
-    return await common_crud.get_item_id(session, model_game.Game, game_id)
+    return await cg.Game(session).get_item_id(game_id)
 
 
 @router.post(
     "/",
-    response_model=schema_game.Game,
+    response_model=sg.Game,
     status_code=fa.status.HTTP_201_CREATED,
     dependencies=[
         fa.Depends(
             dependency.RoleChecker(
-                [model_user.RoleChoice.ADMIN, model_user.RoleChoice.STAFF]
+                [models.RoleChoice.ADMIN, models.RoleChoice.STAFF]
             )
         )
     ],
@@ -41,24 +39,24 @@ async def get_game_id(game_id: int, session: dependency.AsyncSessionDepency):
 async def create_game(
     session: dependency.AsyncSessionDepency,
     image: Annotated[fa.UploadFile, fa.File()],
-    game: schema_game.GameCreate = fa.Depends(),
+    game_data: sg.GameCreate = fa.Depends(),
 ):
-    data = game.__dict__
+    data = game_data.__dict__
     data["image"] = image
 
-    result = await crud_game.create_or_update_game(
-        session, model_game.Game, data, common_crud.create_item
-    )
-    return result
+    game = await cg.Game(session).create_or_update("create", data)
+    await session.commit()
+    await session.refresh(game)
+    return game
 
 
 @router.patch(
-    "/{game_id}",
-    response_model=schema_game.Game,
+    "/{game_id}/",
+    response_model=sg.Game,
     dependencies=[
         fa.Depends(
             dependency.RoleChecker(
-                [model_user.RoleChoice.ADMIN, model_user.RoleChoice.STAFF]
+                [models.RoleChoice.ADMIN, models.RoleChoice.STAFF]
             )
         )
     ],
@@ -67,7 +65,7 @@ async def update_game(
     session: dependency.AsyncSessionDepency,
     game_id: int,
     image: Annotated[fa.UploadFile, fa.File()] | None = None,
-    game_data: schema_game.GameUpdate = fa.Depends(),
+    game_data: sg.GameUpdate = fa.Depends(),
 ):
     upload_data = {
         key: value
@@ -77,7 +75,7 @@ async def update_game(
     if image is not None:
         upload_data["image"] = image
     upload_data["id"] = game_id
-    result = await crud_game.create_or_update_game(
-        session, model_game.Game, upload_data, common_crud.update_item
-    )
-    return result
+    game = await cg.Game(session).create_or_update("update", upload_data)
+    await session.commit()
+    await session.refresh(game)
+    return game

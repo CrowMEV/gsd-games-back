@@ -1,6 +1,7 @@
 from pathlib import Path
+from typing import Literal, Optional
 
-from pydantic import computed_field
+from pydantic import Field, computed_field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -31,6 +32,13 @@ class Config(BaseSettings):
     DB_NAME: str = "db"
     DB_HOST: str = "localhost"
     DB_PORT: int = 5432
+
+    # cookie
+    COOKIE_NAME: str = "Session"
+    COOKIE_SECURE: bool = False
+    COOKIE_EXPIRES: int = Field(default=365, ge=1)
+    COOKIE_HTTPONLY: bool = False
+    COOKIE_SAME_SITE: Optional[Literal["lax", "strict", "none"]] = "lax"
 
     @computed_field
     def dsn(self) -> str:

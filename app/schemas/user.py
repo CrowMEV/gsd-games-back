@@ -53,6 +53,5 @@ class UpdateUser(BaseModel):
     email: str | None = None
     password: str | None = None
     name: str | None = None
-    avatar: str | None = None
     birth_date: datetime | None = None
     phone: str | None = None

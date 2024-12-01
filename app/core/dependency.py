@@ -3,20 +3,14 @@ from typing import Annotated, AsyncIterator
 import jwt
 from fastapi import Depends, status
 from fastapi.exceptions import HTTPException
-from fastapi.security import (
-    HTTPAuthorizationCredentials,
-    HTTPBasic,
-    HTTPBasicCredentials,
-    HTTPBearer,
-)
+from fastapi.security import HTTPBasic, HTTPBasicCredentials
 from jwt.exceptions import InvalidTokenError
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 
+import crud.user as user_crud
 import models
-from core import security
+from core import cookie, security
 from core.settings import config
-from crud.user import get_user
-from models.user import RoleChoice
 from schemas import user as user_schema
 
 
@@ -32,24 +26,23 @@ AsyncSessionDepency = Annotated[
 
 
 async def get_current_user(
-    token: Annotated[HTTPAuthorizationCredentials, Depends(HTTPBearer())],
+    token: Annotated[str, Depends(cookie.get_cookie_key)],
     session: AsyncSessionDepency,
 ) -> models.User:
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Could not validate credentials",
-        headers={"WWW-Authenticate": "Bearer"},
     )
     try:
         payload = jwt.decode(
-            token.credentials, config.SECRET_KEY, algorithms=[config.ALGORITHM]
+            token, config.SECRET_KEY, algorithms=[config.ALGORITHM]
         )
         email: str = payload.get("user_email")
         if email is None:
             raise credentials_exception
     except InvalidTokenError as err:
         raise credentials_exception from err
-    user = await get_user(session, email)
+    user = await user_crud.User(session).get_user(email)
     if user is None:
         raise credentials_exception
     return user
@@ -77,21 +70,22 @@ async def secure_docs(
     exception_message = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Incorrect email or password",
-        headers={"WWW-Authenticate": "Basic"},
     )
-    user = await get_user(session, credentials.username)
+    user = await user_crud.User(session).get_user(credentials.username)
     if not user:
         raise exception_message
     if (
         not security.verify_password(credentials.password, user.password)
-        and user.role == RoleChoice.ADMIN
+        and user.role == models.RoleChoice.ADMIN
     ):
         raise exception_message
 
 
 class RoleChecker:
-    def __init__(self, allowed_roles: list[RoleChoice]):
-        self.allowed_roles = [RoleChoice(role) for role in allowed_roles]
+    def __init__(self, allowed_roles: list[models.RoleChoice]):
+        self.allowed_roles = [
+            models.RoleChoice(role) for role in allowed_roles
+        ]
 
     def __call__(self, user: GetCurrentUser):
         if user.role not in self.allowed_roles:

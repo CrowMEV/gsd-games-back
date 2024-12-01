@@ -1,6 +1,9 @@
+from typing import Sequence
+
 import pytest
 from fastapi import status
 from httpx import AsyncClient
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from tests import factory as data_factory
 
@@ -19,9 +22,9 @@ async def test_get_office(
 async def test_get_office_id(
     admin_client: AsyncClient, factory: data_factory.FactoryCallback
 ):
-    offices = await factory(data_factory.OfficeFactory)
-    office = offices.one()
-    response = await admin_client.get(f"/offices/{office.id}")
+    office = await factory(data_factory.OfficeFactory)
+    assert not isinstance(office, Sequence)
+    response = await admin_client.get(f"/offices/{office.id}/")
     assert response.status_code == status.HTTP_200_OK
 
     response_data = response.json()
@@ -55,15 +58,15 @@ async def test_create_double_address(admin_client: AsyncClient):
 async def test_update_office(
     admin_client: AsyncClient, factory: data_factory.FactoryCallback
 ):
-    offices = await factory(data_factory.OfficeFactory)
-    office = offices.one()
+    office = await factory(data_factory.OfficeFactory)
 
     updated_data = {
         "city": "Irkutsk",
         "address": "Lenina, 22",
     }
+    assert not isinstance(office, Sequence)
     response = await admin_client.patch(
-        f"/offices/{office.id}", json=updated_data
+        f"/offices/{office.id}/", json=updated_data
     )
 
     assert response.status_code == status.HTTP_200_OK
@@ -72,10 +75,12 @@ async def test_update_office(
 
 
 async def test_double_update_office(
-    admin_client: AsyncClient, factory: data_factory.FactoryCallback
+    admin_client: AsyncClient,
+    factory: data_factory.FactoryCallback,
+    async_session: AsyncSession,
 ):
-    offices = await factory(data_factory.OfficeFactory)
-    office = offices.one()
+    office = await factory(data_factory.OfficeFactory)
+    assert not isinstance(office, Sequence)
 
     updated_data = {
         "city": "Irkutsk",
@@ -86,7 +91,8 @@ async def test_double_update_office(
         city=updated_data["city"],
         address=updated_data["address"],
     )
+    await async_session.refresh(office)
     response = await admin_client.patch(
-        f"/offices/{office.id}", json=updated_data
+        f"/offices/{office.id}/", json=updated_data
     )
     assert response.status_code == status.HTTP_409_CONFLICT
