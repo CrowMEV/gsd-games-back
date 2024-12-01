@@ -55,3 +55,7 @@ class UpdateUser(BaseModel):
     name: str | None = None
     birth_date: datetime | None = None
     phone: str | None = None
+
+
+class ResetPassword(BaseModel):
+    email: EmailStr

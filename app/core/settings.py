@@ -1,7 +1,7 @@
 from pathlib import Path
 from typing import Literal, Optional
 
-from pydantic import Field, computed_field
+from pydantic import EmailStr, Field, computed_field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -13,6 +13,10 @@ class Config(BaseSettings):
 
     # run server
     DEBUG: bool = True
+
+    # Redis
+    REDIS_HOST: str = "localhost"
+    REDIS_PORT: int = 6379
 
     # fastapi app
     APP_NAME: str = "GSD GAMES"
@@ -40,6 +44,12 @@ class Config(BaseSettings):
     COOKIE_HTTPONLY: bool = False
     COOKIE_SAME_SITE: Optional[Literal["lax", "strict", "none"]] = "lax"
 
+    # Email
+    EMAIL_PORT: int = 465
+    SMTP_SERVER: str = ""
+    SENDER_EMAIL: EmailStr = ""
+    EMAIL_PASSWORD: str = ""
+
     @computed_field
     def dsn(self) -> str:
         return (
@@ -55,6 +65,10 @@ class Config(BaseSettings):
             f"{self.DB_PASSWORD}@{self.DB_HOST}:"
             f"{self.DB_PORT}/{self.DB_NAME}"
         )
+
+    @computed_field
+    def broker_url(self) -> str:
+        return f"redis://{self.REDIS_HOST}:{self.REDIS_PORT}/0"
 
 
 config = Config()
