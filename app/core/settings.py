@@ -47,7 +47,7 @@ class Config(BaseSettings):
     # Email
     EMAIL_PORT: int = 465
     SMTP_SERVER: str = ""
-    SENDER_EMAIL: EmailStr = ""
+    SENDER_EMAIL: EmailStr | None = None
     EMAIL_PASSWORD: str = ""
 
     @computed_field
