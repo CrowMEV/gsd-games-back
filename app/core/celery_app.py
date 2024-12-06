@@ -22,5 +22,7 @@ def send_email(json_data: str):
         msg = EmailMessage()
         msg.set_content(data["message"])
         msg["Subject"] = data["subject"]
-        server.login(config.SENDER_EMAIL, config.EMAIL_PASSWORD)
-        server.send_message(msg, config.SENDER_EMAIL, data["receiver_emails"])
+        sender_email = config.SENDER_EMAIL
+        password = config.EMAIL_PASSWORD
+        server.login(sender_email, password)  # type: ignore[arg-type]
+        server.send_message(msg, sender_email, data["receiver_emails"])
