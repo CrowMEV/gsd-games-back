@@ -1,9 +1,13 @@
-from typing import Any, Sequence
+from pathlib import Path
+from typing import Any, Literal, Protocol, Sequence
 
+import fastapi as fa
 import sqlalchemy as sa
 from fastapi import HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
+import models
+from core.utils import write_file
 from models import MODEL, TypeModel
 
 
@@ -57,54 +61,46 @@ class Base:
         )
 
 
-# async def create_item(
-#     session: AsyncSession, model: TypeModel, data: dict[str, Any]
-# ) -> MODEL:
-#     stmt = sa.insert(model).returning(model).values(**data)
-#     item = await session.scalar(stmt)
-#     await session.commit()
-#     await session.refresh(item)
-#     return item  # type: ignore
+class BaseCRUDprotocol(Protocol):
+    async def create_item(self, data: dict[str, Any]) -> models.MODEL: ...
+    async def get_items(self) -> Sequence[models.MODEL]: ...
+    async def get_item_id(self, item_id: int) -> models.MODEL: ...
+    async def update_item(self, data: dict[str, Any]) -> models.MODEL: ...
+    async def delete_item(self, item_id: int) -> None: ...
+    async def create_image(
+        self,
+        image: fa.UploadFile,
+        item_id: int | None = None,
+    ): ...
 
 
-# async def get_items(
-#     session: AsyncSession, model: TypeModel
-# ) -> ScalarResult[MODEL]:
-#     result = await session.scalars(sa.select(model))
-#     return result
+class MixinImage:
+    async def create_image(
+        self,
+        image: fa.UploadFile,
+        item_id: int | None = None,
+    ) -> str:
+        if item_id is not None:
+            item: models.MODEL_IMAGE = (
+                await self.get_item_id(  # type:ignore[attr-defined]
+                    item_id
+                )
+            )
+            Path(item.image).unlink()
 
+        return write_file(
+            image.filename,  # type: ignore[arg-type]
+            await image.read(),
+        )
 
-# async def get_item_id(
-#     session: AsyncSession, model: TypeModel, item_id: int
-# ) -> MODEL:
-#     stmt = sa.select(model).where(model.id == item_id)
-#     result = await session.scalar(stmt)
-#     if result is None:
-#         raise HTTPException(
-#             status_code=status.HTTP_404_NOT_FOUND,
-#             detail=f"{model.__name__} not found",
-#         )
-#     return result
+    async def create_or_update(
+        self,
+        action: Literal["create", "update"],
+        data: dict[str, Any],
+    ) -> models.MODEL_IMAGE:
+        image = data.pop("image", None)
+        if image:
+            data["image"] = await self.create_image(image, data.get("id"))
 
-
-# async def update_item(
-#     session: AsyncSession,
-#     model: TypeModel,
-#     data: dict[str, Any],
-# ) -> MODEL:
-#     item_id = data.pop("id")
-#     stmt = (
-#         sa.update(model)
-#         .returning(model)
-#         .where(model.id == item_id)
-#         .values(**data)
-#     )
-#     result = await session.scalar(stmt)
-#     if result is None:
-#         raise HTTPException(
-#             status_code=status.HTTP_404_NOT_FOUND,
-#             detail=f"{model.__name__} not found",
-#         )
-#     await session.commit()
-#     await session.refresh(result)
-#     return result
+        result = await self.actions[action](data)  # type:ignore[attr-defined]
+        return result
