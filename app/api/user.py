@@ -1,11 +1,14 @@
+import json
 from pathlib import Path
 
 import fastapi as fa
+from faker import Faker
 from fastapi.responses import JSONResponse
 
 import crud.user as cu
 import models
 from core import cookie, dependency, security
+from core.celery_app import send_email
 from core.utils import write_file
 from schemas import user as schema_user
 
@@ -85,6 +88,30 @@ async def get_users(session: dependency.AsyncSessionDepency):
 @router.get("/me/", response_model=schema_user.UserResponse)
 async def get_user_id(user: dependency.GetCurrentUser):
     return user
+
+
+@router.patch("/", response_class=JSONResponse)
+async def reset_password(
+    email: schema_user.ResetPassword, session: dependency.AsyncSessionDepency
+):
+    user = await cu.User(session).get_user(email=email.email)
+    if user is None:
+        raise fa.HTTPException(
+            status_code=fa.status.HTTP_404_NOT_FOUND, detail="User not found"
+        )
+    password = Faker().password(length=10)
+    user.password = security.get_password_hash(password)
+    await session.commit()
+    await session.refresh(user)
+    email_data = {
+        "subject": "Новый пароль от личного кабинета",
+        "message": f"Новый пароль: {password}",
+        "receiver_emails": [user.email],
+    }
+    send_email.delay(json.dumps(email_data))
+    return JSONResponse(
+        status_code=fa.status.HTTP_200_OK, content="Message successfully sent"
+    )
 
 
 @router.patch(

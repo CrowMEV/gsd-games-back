@@ -107,6 +107,25 @@ class OfficeFactory(DataFactory):
         await self.write_to_db()
 
 
+class GameRoomFactory(DataFactory):
+    def __init__(self, session: AsyncSession) -> None:
+        super().__init__(session)
+        self.model = models.GameRoom
+
+    async def generate_data(self, count=1, **kwargs) -> None:
+        self.list_data.extend(
+            {
+                "game_id": kwargs.get("game_id"),
+                "office_id": kwargs.get("office_id"),
+                "date": kwargs.get("date", fake.date_object()),
+                "image": kwargs.get("image", "media/test-image.jpg"),
+                "price": kwargs.get("price", fake.pyint()),
+            }
+            for _ in range(count)
+        )
+        await self.write_to_db()
+
+
 P = ParamSpec("P")
 FACTORY = TypeVar("FACTORY", bound=DataFactory)
 

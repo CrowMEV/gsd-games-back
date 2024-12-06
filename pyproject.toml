@@ -15,15 +15,17 @@ pyjwt = "^2.9.0"
 python-multipart = "^0.0.9"
 bcrypt = "^4.2.0"
 alembic = "^1.13.2"
+celery = "^5.4.0"
+faker = "^28.4.1"
 
 [tool.poetry.group.dev.dependencies]
 pylint = "^3.2.6"
 httpx = "^0.27.2"
 black = "^24.8.0"
 isort = "^5.13.2"
-faker = "^28.4.1"
 pytest = "^8.3.2"
 mypy = "^1.11.2"
+celery-stubs = "^0.1.3"
 
 
 [tool.poetry.group.bot.dependencies]
