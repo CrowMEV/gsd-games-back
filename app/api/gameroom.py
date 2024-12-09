@@ -46,9 +46,12 @@ async def get_gameroom_id(
 )
 async def create_gameroom(
     session: dependency.AsyncSessionDepency,
-    gameroom: sgr.GameRoom,
+    image: Annotated[fa.UploadFile, fa.File()],
+    gameroom_data: sgr.GameRoomCreate = fa.Depends(),
 ):
-    data = gameroom.__dict__
+    data = gameroom_data.__dict__
+    data["image"] = image
+
     result = await cgr.GameRoom(session).create_or_update("create", data)
     await session.commit()
     await session.refresh(result)
