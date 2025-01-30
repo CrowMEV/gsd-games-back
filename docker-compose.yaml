@@ -84,8 +84,6 @@ services:
     build:
       dockerfile: ./Dockerfile.back.prod
     depends_on:
-      redis:
-        condition: service_healthy
     restart: always
     volumes:
       - ./apps:/app
