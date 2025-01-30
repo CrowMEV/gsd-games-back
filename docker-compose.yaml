@@ -83,7 +83,6 @@ services:
   celery:
     build:
       dockerfile: ./Dockerfile.back.prod
-    depends_on:
     restart: always
     volumes:
       - ./apps:/app
