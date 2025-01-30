@@ -86,7 +86,7 @@ services:
     restart: always
     volumes:
       - ./apps:/app
-    command: celery -A celery_app worker -l INFO
+    command: celery -A core.celery_app worker -l INFO
     env_file:
       - .env
 
