@@ -14,7 +14,7 @@ router = fa.APIRouter(
 
 @router.get(
     "/",
-    response_model=list[so.Office],
+    response_model=list[so.OfficeResponse],
     dependencies=[
         fa.Depends(
             dependency.RoleChecker(
@@ -29,7 +29,7 @@ async def get_offices(session: dependency.AsyncSessionDepency):
 
 @router.get(
     "/{office_id}/",
-    response_model=so.Office,
+    response_model=so.OfficeResponse,
     dependencies=[
         fa.Depends(
             dependency.RoleChecker(
@@ -70,7 +70,7 @@ async def create_office(
 
 @router.patch(
     "/{office_id}/",
-    response_model=so.UpdateOffice,
+    response_model=so.OfficeResponse,
     dependencies=[
         fa.Depends(
             dependency.RoleChecker(

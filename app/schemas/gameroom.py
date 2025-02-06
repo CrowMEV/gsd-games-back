@@ -4,16 +4,19 @@ from dataclasses import dataclass
 import fastapi as fa
 from pydantic import BaseModel, ConfigDict
 
+from schemas import game as schema_game
+from schemas import office as schema_office
+
 
 class GameRoom(BaseModel):
-    game_id: int
-    office_id: int
     date: datetime.date
     price: int
     image: str
 
 
 class GameRoomResponse(GameRoom):
+    game: schema_game.GameResponse
+    office: schema_office.OfficeResponse
     id: int
     model_config = ConfigDict(from_attributes=True)
 

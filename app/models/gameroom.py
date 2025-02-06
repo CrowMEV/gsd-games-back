@@ -1,7 +1,7 @@
 from datetime import datetime
 
 import sqlalchemy as sa
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.types import Date
 
 from models.base import Base
@@ -15,3 +15,9 @@ class GameRoom(Base):
     date: Mapped[datetime] = mapped_column(Date, nullable=False)
     price: Mapped[int]
     image: Mapped[str]
+    game: Mapped["Game"] = relationship(  # type: ignore[name-defined]
+        back_populates="gamerooms", lazy="joined"
+    )
+    office: Mapped["Office"] = relationship(  # type: ignore[name-defined]
+        back_populates="gamerooms", lazy="joined"
+    )

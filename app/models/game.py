@@ -1,5 +1,5 @@
 import sqlalchemy as sa
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from models.base import Base
 
@@ -14,3 +14,7 @@ class Game(Base):
     min_people: Mapped[int]
     max_people: Mapped[int]
     is_active: Mapped[bool] = mapped_column(server_default=sa.true())
+    # pylint: disable=C0301
+    gamerooms: Mapped[list["GameRoom"]] = relationship(  # type: ignore[name-defined]
+        back_populates="game", lazy="selectin"
+    )

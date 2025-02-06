@@ -14,12 +14,12 @@ router = fa.APIRouter(
 )
 
 
-@router.get("/", response_model=list[sg.Game])
+@router.get("/", response_model=list[sg.GameResponse])
 async def get_games(session: dependency.AsyncSessionDepency):
     return await cg.Game(session).get_items()
 
 
-@router.get("/{game_id}/", response_model=sg.Game)
+@router.get("/{game_id}/", response_model=sg.GameResponse)
 async def get_game_id(game_id: int, session: dependency.AsyncSessionDepency):
     return await cg.Game(session).get_item_id(game_id)
 
@@ -52,7 +52,7 @@ async def create_game(
 
 @router.patch(
     "/{game_id}/",
-    response_model=sg.Game,
+    response_model=sg.GameResponse,
     dependencies=[
         fa.Depends(
             dependency.RoleChecker(

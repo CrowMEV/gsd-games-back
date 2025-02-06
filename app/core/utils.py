@@ -9,4 +9,4 @@ def write_file(filename: str, content: bytes) -> str:
     new_file_name = f"{file_name.stem}{str(uuid4())}{file_name.suffix}"
     file_path = config.MEDIA_DIR / new_file_name
     file_path.write_bytes(content)
-    return f"media/{new_file_name}"
+    return f"{config.BASE_URL}/media/{new_file_name}"

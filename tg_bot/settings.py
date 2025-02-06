@@ -5,7 +5,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 class Config(BaseSettings):
     model_config = SettingsConfigDict(extra="allow")
 
-    API_TOKEN: str = Field(default=...)
+    BOT_TOKEN: str = Field(default=...)
     BACKEND_URL: str = "http://localhost/"
     REDIS_HOST: str = "localhost"
     REDIS_PORT: int = 6379

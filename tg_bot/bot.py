@@ -16,7 +16,6 @@ redis_client = redis.Redis()
 redis_client.from_url(settings.dsn)  # type:ignore
 
 
-API_TOKEN = settings.API_TOKEN
 logging.basicConfig(level=logging.INFO)
 
 form_router = Router()
@@ -47,7 +46,7 @@ async def get_user(message: Message) -> None:
 async def main():
 
     bot = Bot(
-        token=API_TOKEN,
+        token=settings.BOT_TOKEN,
         default=DefaultBotProperties(parse_mode=ParseMode.HTML),
     )
     dp.include_router(form_router)

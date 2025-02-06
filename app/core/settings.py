@@ -10,6 +10,7 @@ class Config(BaseSettings):
 
     ROOT_DIR: Path = Path(__file__).parent.parent.resolve()
     MEDIA_DIR: Path = ROOT_DIR / "media"
+    BASE_URL: str = ""
 
     # run server
     DEBUG: bool = True

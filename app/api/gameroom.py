@@ -16,7 +16,7 @@ router = fa.APIRouter(
 
 @router.get(
     "/",
-    response_model=list[sgr.GameRoom],
+    response_model=list[sgr.GameRoomResponse],
 )
 async def get_gamerooms(session: dependency.AsyncSessionDepency):
     return await cgr.GameRoom(session).get_items()
@@ -24,7 +24,7 @@ async def get_gamerooms(session: dependency.AsyncSessionDepency):
 
 @router.get(
     "/{gameroom_id}/",
-    response_model=sgr.GameRoom,
+    response_model=sgr.GameRoomResponse,
 )
 async def get_gameroom_id(
     gameroom_id: int, session: dependency.AsyncSessionDepency

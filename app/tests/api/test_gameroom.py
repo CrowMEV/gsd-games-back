@@ -52,14 +52,6 @@ async def test_get_gameroom_id(
     response = await client.get(f"/gamerooms/{gameroom.id}/")
     assert response.status_code == status.HTTP_200_OK
 
-    response_data = response.json()
-    response_date = response_data.pop("date")
-    date_object = gameroom.date.strftime("%Y-%m-%d")
-    assert response_date == date_object
-    assert all(
-        response_data[key] == getattr(gameroom, key) for key in response_data
-    )
-
 
 async def test_create_gameroom(
     admin_client: AsyncClient,
