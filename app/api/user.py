@@ -30,7 +30,7 @@ async def create_upload_avatar(
         file_path.unlink()
 
     user.avatar = write_file(
-        file.filename,  # type: ignore
+        file.filename,  # type: ignore[arg-type]
         await file.read(),
     )
     await session.commit()

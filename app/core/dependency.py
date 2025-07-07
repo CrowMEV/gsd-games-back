@@ -16,7 +16,7 @@ from schemas import user as user_schema
 
 async def get_async_session() -> AsyncIterator[AsyncSession]:
     # pylint: disable=C0301
-    async with AsyncSession(create_async_engine(config.async_dsn)) as session:  # type: ignore
+    async with AsyncSession(create_async_engine(config.dsn)) as session:  # type: ignore[arg-type]
         yield session
 
 

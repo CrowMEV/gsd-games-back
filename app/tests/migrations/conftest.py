@@ -5,17 +5,7 @@ from alembic.config import Config
 from sqlalchemy import create_engine
 from sqlalchemy.engine import Engine
 
-from core.settings import config
 from tests.utils import make_alembic_config, tmp_database
-
-
-@pytest.fixture(scope="package", name="pg_url")
-def pg_url_fixture() -> str:
-    """
-    Provides base PostgreSQL URL for creating temporary databases.
-    """
-    config.DB_HOST = "localhost"
-    return config.dsn  # type: ignore
 
 
 @pytest.fixture(name="postgres")

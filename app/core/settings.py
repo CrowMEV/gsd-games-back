@@ -54,15 +54,7 @@ class Config(BaseSettings):
     @computed_field
     def dsn(self) -> str:
         return (
-            f"postgresql://{self.DB_USER}:"
-            f"{self.DB_PASSWORD}@{self.DB_HOST}:"
-            f"{self.DB_PORT}/{self.DB_NAME}"
-        )
-
-    @computed_field
-    def async_dsn(self) -> str:
-        return (
-            f"postgresql+asyncpg://{self.DB_USER}:"
+            f"postgresql+psycopg://{self.DB_USER}:"
             f"{self.DB_PASSWORD}@{self.DB_HOST}:"
             f"{self.DB_PORT}/{self.DB_NAME}"
         )

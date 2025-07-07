@@ -24,15 +24,6 @@ def anyio_backend():
     return "asyncio"
 
 
-@pytest.fixture(scope="package", name="pg_url")
-def pg_url_fixture() -> str:
-    """
-    Provides base PostgreSQL URL for creating temporary databases.
-    """
-    config.DB_HOST = "localhost"
-    return config.async_dsn  # type: ignore
-
-
 @pytest.fixture(scope="package", autouse=True, name="postgres_temlate")
 async def postgres_temlate_fixture(pg_url: str) -> AsyncIterator[str]:
     """
@@ -62,7 +53,7 @@ async def postgres_engine_fixture(postgres: str) -> AsyncIterator[AsyncEngine]:
     """
     SQLAlchemy async engine, bound to temporary database.
     """
-    engine = create_async_engine(postgres, echo=True)  # type: ignore
+    engine = create_async_engine(postgres, echo=True)
     try:
         yield engine
     finally:
