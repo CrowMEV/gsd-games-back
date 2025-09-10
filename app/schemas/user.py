@@ -39,7 +39,6 @@ class User(BaseModel):
 
 class CreateUser(User):
     password: Password
-    phone: str = ""
 
 
 class UserResponse(User):

@@ -10,7 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 import models
 from core.security import create_access_token
-from core.settings import config
+from core.settings import settings
 from tests import factory as data_factory
 
 
@@ -110,7 +110,7 @@ async def test_dublicate_email_update(
     await async_session.refresh(user2)
     token = create_access_token({"user_email": user1.email})
     cookie = Cookies()
-    cookie.set(config.COOKIE_NAME, token)
+    cookie.set(settings.COOKIE_NAME, token)
     client.cookies = cookie
     data = {"email": user1.email}
     response = await client.patch(

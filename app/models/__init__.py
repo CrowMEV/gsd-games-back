@@ -8,6 +8,5 @@ from models.user import RoleChoice, User
 
 
 MODEL = TypeVar("MODEL", bound=Base)
-MODEL_IMAGE = Game | GameRoom
 
 TypeModel = Type[MODEL]

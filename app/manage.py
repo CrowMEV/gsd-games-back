@@ -8,7 +8,7 @@ from sqlalchemy.orm import Session
 
 import models.user as user_model
 from core.security import get_password_hash
-from core.settings import config
+from core.settings import settings
 from schemas import user as user_schema
 
 
@@ -31,7 +31,7 @@ def create_admin(name, email, password):
         for e in err.errors():
             click.echo(f"{e['loc']}: {e['msg']}")
         return
-    with Session(create_engine(config.dsn)) as session:
+    with Session(create_engine(settings.dsn)) as session:
         data["role"] = user_model.RoleChoice.ADMIN
         data["password"] = get_password_hash(data["password"])
         session.add(user_model.User(**data))

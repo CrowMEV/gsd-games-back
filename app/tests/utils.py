@@ -11,7 +11,7 @@ from sqlalchemy.engine.url import make_url
 from sqlalchemy.exc import ProgrammingError
 from sqlalchemy.ext.asyncio import create_async_engine
 
-from core.settings import config as project_settings
+from core.settings import settings as project_settings
 
 
 def make_alembic_config(

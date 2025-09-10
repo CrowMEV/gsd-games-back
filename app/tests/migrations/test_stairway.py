@@ -11,15 +11,15 @@ from alembic.command import downgrade, upgrade
 from alembic.config import Config
 from alembic.script import Script, ScriptDirectory
 
-from core.settings import config
+from core.settings import settings
 from tests.utils import make_alembic_config
 
 
 def get_revisions():
     # Create Alembic configuration object
     # (we don't need database for getting revisions list)
-    config.DB_HOST = "localhost"
-    alembic_config = make_alembic_config(config.dsn, "app")
+    settings.DB_HOST = "localhost"
+    alembic_config = make_alembic_config(settings.dsn, "app")
     # Get directory object with Alembic migrations
     revisions_dir = ScriptDirectory.from_config(alembic_config)
 

@@ -6,7 +6,7 @@ from sqlalchemy import pool
 from sqlalchemy.engine import Connection
 from sqlalchemy.ext.asyncio import async_engine_from_config
 
-from core.settings import config as project_config
+from core.settings import settings
 from models import Base
 
 
@@ -14,7 +14,7 @@ from models import Base
 # access to the values within the .ini file in use.
 config = context.config
 if config.get_main_option("is_testing", "False") == "False":
-    config.set_main_option("sqlalchemy.url", project_config.dsn)
+    config.set_main_option("sqlalchemy.url", settings.dsn)
 
 # Interpret the config file for Python logging.
 # This line sets up loggers basically.

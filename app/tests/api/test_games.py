@@ -93,3 +93,37 @@ async def test_update_game(
     assert response.status_code == status.HTTP_200_OK
     assert response.json()["description"] == updated_data["description"]
     assert response.json()["rules"] == updated_data["rules"]
+
+
+async def test_update_game_with_image(
+    admin_client: AsyncClient,
+    path_image: Path,
+):
+
+    data = {
+        "title": "Monopoly",
+        "description": "Money money money",
+        "rules": "mercilessly",
+        "min_people": 2,
+        "max_people": 10,
+    }
+    with open(path_image, "rb") as file:
+        response = await admin_client.post(
+            "/games/", data=data, files={"image": file}
+        )
+
+        assert response.status_code == status.HTTP_201_CREATED
+
+        updated_data = {
+            "description": "Description about game",
+            "rules": "mercilessly",
+        }
+        response = await admin_client.patch(
+            f"/games/{response.json()['id']}/",
+            data=updated_data,
+            files={"image": file},
+        )
+
+    assert response.status_code == status.HTTP_200_OK
+    assert response.json()["description"] == updated_data["description"]
+    assert response.json()["rules"] == updated_data["rules"]

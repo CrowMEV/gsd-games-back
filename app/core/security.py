@@ -6,9 +6,9 @@ from fastapi import status
 from fastapi.exceptions import HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 
-import crud.user as user_crud
 import models
-from core.settings import config
+from core.settings import settings
+from repositories import UserRepository
 
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
@@ -22,7 +22,7 @@ def get_password_hash(password: str) -> str:
 async def authenticate_user(
     session: AsyncSession, email: str, password: str
 ) -> models.User:
-    user = await user_crud.User(session).get_user(email)
+    user = await UserRepository(session).get_user(email)
     if not user or not verify_password(password, user.password):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -39,6 +39,6 @@ def create_access_token(data: dict, expires_delta: timedelta | None = None):
         expire = datetime.now(timezone.utc) + timedelta(minutes=15)
     to_encode.update({"exp": expire})
     encoded_jwt = jwt.encode(
-        to_encode, config.SECRET_KEY, algorithm=config.ALGORITHM
+        to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM
     )
     return encoded_jwt

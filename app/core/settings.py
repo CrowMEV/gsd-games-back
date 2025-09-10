@@ -5,8 +5,8 @@ from pydantic import EmailStr, Field, computed_field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
-class Config(BaseSettings):
-    model_config = SettingsConfigDict(extra="allow")
+class Settings(BaseSettings):
+    model_config = SettingsConfigDict(extra="allow", env_file=".env")
 
     ROOT_DIR: Path = Path(__file__).parent.parent.resolve()
     MEDIA_DIR: Path = ROOT_DIR / "media"
@@ -64,4 +64,4 @@ class Config(BaseSettings):
         return f"redis://{self.REDIS_HOST}:{self.REDIS_PORT}/0"
 
 
-config = Config()
+settings = Settings()
