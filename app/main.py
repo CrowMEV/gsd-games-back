@@ -10,35 +10,35 @@ from fastapi.staticfiles import StaticFiles
 
 from api import game, gameroom, office, user
 from core.dependency import secure_docs
-from core.settings import config
+from core.settings import settings
 
 
 @asynccontextmanager
 async def lifespan(application: FastAPI):
-    config.MEDIA_DIR.mkdir(exist_ok=True)
+    settings.MEDIA_DIR.mkdir(exist_ok=True)
     application.mount(
-        "/media", StaticFiles(directory=config.MEDIA_DIR), name="media"
+        "/media", StaticFiles(directory=settings.MEDIA_DIR), name="media"
     )
 
     yield
 
 
 app = FastAPI(
-    title=config.APP_NAME,
-    docs_url=config.DOCS_URL,
-    redoc_url=config.REDOC_URL,
+    title=settings.APP_NAME,
+    docs_url=settings.DOCS_URL,
+    redoc_url=settings.REDOC_URL,
     lifespan=lifespan,
 )
 
 
-if not config.DEBUG:
+if not settings.DEBUG:
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=config.APP_ALLOWED_ORIGINS,
+        allow_origins=settings.APP_ALLOWED_ORIGINS,
         allow_credentials=True,
     )
     app.add_middleware(
-        TrustedHostMiddleware, allowed_hosts=config.APP_ALLOWED_HOSTS
+        TrustedHostMiddleware, allowed_hosts=settings.APP_ALLOWED_HOSTS
     )
 
     @app.get(

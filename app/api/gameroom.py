@@ -2,10 +2,10 @@ from typing import Annotated
 
 import fastapi as fa
 
-import crud.gameroom as cgr
 import models
 from core import dependency
-from schemas import gameroom as sgr
+from schemas import gameroom as schema_gamerooms
+from services import GameRoomServive
 
 
 router = fa.APIRouter(
@@ -16,25 +16,25 @@ router = fa.APIRouter(
 
 @router.get(
     "/",
-    response_model=list[sgr.GameRoomResponse],
+    response_model=list[schema_gamerooms.GameRoomResponse],
 )
 async def get_gamerooms(session: dependency.AsyncSessionDepency):
-    return await cgr.GameRoom(session).get_items()
+    return await GameRoomServive(session).get_gamerooms()
 
 
 @router.get(
     "/{gameroom_id}/",
-    response_model=sgr.GameRoomResponse,
+    response_model=schema_gamerooms.GameRoomResponse,
 )
 async def get_gameroom_id(
     gameroom_id: int, session: dependency.AsyncSessionDepency
 ):
-    return await cgr.GameRoom(session).get_item_id(gameroom_id)
+    return await GameRoomServive(session).get_gameroom(gameroom_id)
 
 
 @router.post(
     "/",
-    response_model=sgr.GameRoomResponse,
+    response_model=schema_gamerooms.GameRoomResponse,
     status_code=fa.status.HTTP_201_CREATED,
     dependencies=[
         fa.Depends(
@@ -47,20 +47,20 @@ async def get_gameroom_id(
 async def create_gameroom(
     session: dependency.AsyncSessionDepency,
     image: Annotated[fa.UploadFile, fa.File()],
-    gameroom_data: sgr.GameRoomCreate = fa.Depends(),
+    gameroom_data: schema_gamerooms.GameRoomCreate = fa.Depends(),
 ):
     data = gameroom_data.__dict__
-    data["image"] = image
-
-    result = await cgr.GameRoom(session).create_or_update("create", data)
+    data["image_name"] = image.filename
+    data["image_content"] = await image.read()
+    gameroom = await GameRoomServive(session).create("gameroom", data)
     await session.commit()
-    await session.refresh(result)
-    return result
+    await session.refresh(gameroom)
+    return gameroom
 
 
 @router.patch(
     "/{gameroom_id}/",
-    response_model=sgr.GameRoomResponse,
+    response_model=schema_gamerooms.GameRoomResponse,
     dependencies=[
         fa.Depends(
             dependency.RoleChecker(
@@ -72,20 +72,19 @@ async def create_gameroom(
 async def update_gameroom(
     session: dependency.AsyncSessionDepency,
     gameroom_id: int,
-    image: Annotated[fa.UploadFile, fa.File()] | None = None,
-    gameroom_data: sgr.GameRoomUpdate = fa.Depends(),
+    image: fa.UploadFile | None = None,
+    gameroom_data: schema_gamerooms.GameRoomUpdate = fa.Depends(),
 ):
-    upload_data = {
+    data = {
         key: value
         for key, value in gameroom_data.__dict__.items()
         if value is not None
     }
     if image is not None:
-        upload_data["image"] = image
-    upload_data["id"] = gameroom_id
-    result = await cgr.GameRoom(session).create_or_update(
-        "update", upload_data
-    )
+        data["image_name"] = image.filename
+        data["image_content"] = await image.read()
+    data["id"] = gameroom_id
+    gameroom = await GameRoomServive(session).update("gameroom", data)
     await session.commit()
-    await session.refresh(result)
-    return result
+    await session.refresh(gameroom)
+    return gameroom

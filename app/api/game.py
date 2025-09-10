@@ -1,11 +1,12 @@
 from typing import Annotated
 
 import fastapi as fa
+from sqlalchemy.exc import IntegrityError
 
-import crud.game as cg
 import models
 from core import dependency
-from schemas import game as sg
+from schemas import game as schema_game
+from services import GameService
 
 
 router = fa.APIRouter(
@@ -14,19 +15,19 @@ router = fa.APIRouter(
 )
 
 
-@router.get("/", response_model=list[sg.GameResponse])
+@router.get("/", response_model=list[schema_game.GameResponse])
 async def get_games(session: dependency.AsyncSessionDepency):
-    return await cg.Game(session).get_items()
+    return await GameService(session).get_games()
 
 
-@router.get("/{game_id}/", response_model=sg.GameResponse)
+@router.get("/{game_id}/", response_model=schema_game.GameResponse)
 async def get_game_id(game_id: int, session: dependency.AsyncSessionDepency):
-    return await cg.Game(session).get_item_id(game_id)
+    return await GameService(session).get_game(game_id)
 
 
 @router.post(
     "/",
-    response_model=sg.Game,
+    response_model=schema_game.GameResponse,
     status_code=fa.status.HTTP_201_CREATED,
     dependencies=[
         fa.Depends(
@@ -39,12 +40,20 @@ async def get_game_id(game_id: int, session: dependency.AsyncSessionDepency):
 async def create_game(
     session: dependency.AsyncSessionDepency,
     image: Annotated[fa.UploadFile, fa.File()],
-    game_data: sg.GameCreate = fa.Depends(),
+    game_data: schema_game.GameCreate = fa.Depends(),
 ):
     data = game_data.__dict__
-    data["image"] = image
-
-    game = await cg.Game(session).create_or_update("create", data)
+    data["image_name"] = image.filename
+    data["image_content"] = await image.read()
+    try:
+        game = await GameService(session).create("game", data)
+    except IntegrityError as err:
+        if err.orig is not None and "uq_games_title" in err.orig.args[0]:
+            raise fa.HTTPException(
+                status_code=fa.status.HTTP_409_CONFLICT,
+                detail=f"Game with {data['title']} already exist",
+            ) from err
+        raise err
     await session.commit()
     await session.refresh(game)
     return game
@@ -52,7 +61,7 @@ async def create_game(
 
 @router.patch(
     "/{game_id}/",
-    response_model=sg.GameResponse,
+    response_model=schema_game.GameResponse,
     dependencies=[
         fa.Depends(
             dependency.RoleChecker(
@@ -64,18 +73,27 @@ async def create_game(
 async def update_game(
     session: dependency.AsyncSessionDepency,
     game_id: int,
-    image: Annotated[fa.UploadFile, fa.File()] | None = None,
-    game_data: sg.GameUpdate = fa.Depends(),
+    image: fa.UploadFile | None = None,
+    game_data: schema_game.GameUpdate = fa.Depends(),
 ):
-    upload_data = {
+    data = {
         key: value
         for key, value in game_data.__dict__.items()
         if value is not None
     }
     if image is not None:
-        upload_data["image"] = image
-    upload_data["id"] = game_id
-    game = await cg.Game(session).create_or_update("update", upload_data)
+        data["image_name"] = image.filename
+        data["image_content"] = await image.read()
+    data["id"] = game_id
+    try:
+        game = await GameService(session).update("game", data)
+    except IntegrityError as err:
+        if err.orig is not None and "uq_games_title" in err.orig.args[0]:
+            raise fa.HTTPException(
+                status_code=fa.status.HTTP_409_CONFLICT,
+                detail=f"Game with {data['title']} already exist",
+            ) from err
+        raise err
     await session.commit()
     await session.refresh(game)
     return game

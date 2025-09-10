@@ -7,16 +7,16 @@ from fastapi.security import HTTPBasic, HTTPBasicCredentials
 from jwt.exceptions import InvalidTokenError
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 
-import crud.user as user_crud
 import models
 from core import cookie, security
-from core.settings import config
+from core.settings import settings
 from schemas import user as user_schema
+from services import UserService
 
 
 async def get_async_session() -> AsyncIterator[AsyncSession]:
     # pylint: disable=C0301
-    async with AsyncSession(create_async_engine(config.async_dsn)) as session:  # type: ignore
+    async with AsyncSession(create_async_engine(settings.dsn)) as session:  # type: ignore[arg-type]
         yield session
 
 
@@ -35,14 +35,14 @@ async def get_current_user(
     )
     try:
         payload = jwt.decode(
-            token, config.SECRET_KEY, algorithms=[config.ALGORITHM]
+            token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM]
         )
         email: str = payload.get("user_email")
         if email is None:
             raise credentials_exception
     except InvalidTokenError as err:
         raise credentials_exception from err
-    user = await user_crud.User(session).get_user(email)
+    user = await UserService(session).get_user(email)
     if user is None:
         raise credentials_exception
     return user
@@ -71,7 +71,7 @@ async def secure_docs(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Incorrect email or password",
     )
-    user = await user_crud.User(session).get_user(credentials.username)
+    user = await UserService(session).get_user(credentials.username)
     if not user:
         raise exception_message
     if (

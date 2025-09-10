@@ -5,8 +5,8 @@ from pydantic import EmailStr, Field, computed_field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
-class Config(BaseSettings):
-    model_config = SettingsConfigDict(extra="allow")
+class Settings(BaseSettings):
+    model_config = SettingsConfigDict(extra="allow", env_file=".env")
 
     ROOT_DIR: Path = Path(__file__).parent.parent.resolve()
     MEDIA_DIR: Path = ROOT_DIR / "media"
@@ -54,15 +54,7 @@ class Config(BaseSettings):
     @computed_field
     def dsn(self) -> str:
         return (
-            f"postgresql://{self.DB_USER}:"
-            f"{self.DB_PASSWORD}@{self.DB_HOST}:"
-            f"{self.DB_PORT}/{self.DB_NAME}"
-        )
-
-    @computed_field
-    def async_dsn(self) -> str:
-        return (
-            f"postgresql+asyncpg://{self.DB_USER}:"
+            f"postgresql+psycopg://{self.DB_USER}:"
             f"{self.DB_PASSWORD}@{self.DB_HOST}:"
             f"{self.DB_PORT}/{self.DB_NAME}"
         )
@@ -72,4 +64,4 @@ class Config(BaseSettings):
         return f"redis://{self.REDIS_HOST}:{self.REDIS_PORT}/0"
 
 
-config = Config()
+settings = Settings()

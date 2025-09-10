@@ -14,7 +14,7 @@ import models
 import tests.factory as data_factory
 from core.dependency import get_async_session
 from core.security import create_access_token
-from core.settings import config
+from core.settings import settings
 from main import app
 from tests.utils import async_tmp_database
 
@@ -22,15 +22,6 @@ from tests.utils import async_tmp_database
 @pytest.fixture(scope="package")
 def anyio_backend():
     return "asyncio"
-
-
-@pytest.fixture(scope="package", name="pg_url")
-def pg_url_fixture() -> str:
-    """
-    Provides base PostgreSQL URL for creating temporary databases.
-    """
-    config.DB_HOST = "localhost"
-    return config.async_dsn  # type: ignore
 
 
 @pytest.fixture(scope="package", autouse=True, name="postgres_temlate")
@@ -62,7 +53,7 @@ async def postgres_engine_fixture(postgres: str) -> AsyncIterator[AsyncEngine]:
     """
     SQLAlchemy async engine, bound to temporary database.
     """
-    engine = create_async_engine(postgres, echo=True)  # type: ignore
+    engine = create_async_engine(postgres, echo=True)
     try:
         yield engine
     finally:
@@ -134,7 +125,7 @@ async def admin_client_fixture(
         transport=ASGITransport(app=test_app), base_url="http://test"
     ) as ac:
         cookie = Cookies()
-        cookie.set(config.COOKIE_NAME, token)
+        cookie.set(settings.COOKIE_NAME, token)
         ac.cookies = cookie
         yield ac
 
@@ -156,18 +147,18 @@ async def user_client_fixture(
         transport=ASGITransport(app=test_app), base_url="http://test"
     ) as ac:
         cookie = Cookies()
-        cookie.set(config.COOKIE_NAME, token)
+        cookie.set(settings.COOKIE_NAME, token)
         ac.cookies = cookie
         yield ac
 
 
 @pytest.fixture
 def path_image():
-    return config.ROOT_DIR / "tests" / "test-image.jpg"
+    return settings.ROOT_DIR / "tests" / "test-image.jpg"
 
 
 @pytest.fixture(scope="package", autouse=True)
 async def media_dir():
-    config.MEDIA_DIR.mkdir(exist_ok=True)
+    settings.MEDIA_DIR.mkdir(exist_ok=True)
     yield
-    rmtree(config.MEDIA_DIR)
+    rmtree(settings.MEDIA_DIR)

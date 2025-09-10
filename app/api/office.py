@@ -1,9 +1,10 @@
 import fastapi as fa
+from sqlalchemy.exc import IntegrityError
 
-import crud.office as co
 import models
-import schemas.office as so
+import schemas.office as schemas_office
 from core import dependency
+from services import OfficeService
 
 
 router = fa.APIRouter(
@@ -14,7 +15,7 @@ router = fa.APIRouter(
 
 @router.get(
     "/",
-    response_model=list[so.OfficeResponse],
+    response_model=list[schemas_office.OfficeResponse],
     dependencies=[
         fa.Depends(
             dependency.RoleChecker(
@@ -24,12 +25,12 @@ router = fa.APIRouter(
     ],
 )
 async def get_offices(session: dependency.AsyncSessionDepency):
-    return await co.Office(session).get_items()
+    return await OfficeService(session).get_offices()
 
 
 @router.get(
     "/{office_id}/",
-    response_model=so.OfficeResponse,
+    response_model=schemas_office.OfficeResponse,
     dependencies=[
         fa.Depends(
             dependency.RoleChecker(
@@ -41,12 +42,12 @@ async def get_offices(session: dependency.AsyncSessionDepency):
 async def get_office_id(
     office_id: int, session: dependency.AsyncSessionDepency
 ):
-    return await co.Office(session).get_item_id(office_id)
+    return await OfficeService(session).get_office(office_id)
 
 
 @router.post(
     "/",
-    response_model=so.OfficeResponse,
+    response_model=schemas_office.OfficeResponse,
     status_code=fa.status.HTTP_201_CREATED,
     dependencies=[
         fa.Depends(
@@ -58,11 +59,25 @@ async def get_office_id(
 )
 async def create_office(
     session: dependency.AsyncSessionDepency,
-    office_data: so.Office,
+    office_data: schemas_office.Office,
 ):
-    office = await co.Office(session).create_or_update(
-        "create", office_data.model_dump()
-    )
+    try:
+        office = await OfficeService(session).create_office(
+            office_data.model_dump()
+        )
+    except IntegrityError as err:
+        if (
+            err.orig is not None
+            and "address_city_constraint" in err.orig.args[0]
+        ):
+            raise fa.HTTPException(
+                status_code=fa.status.HTTP_409_CONFLICT,
+                detail=(
+                    f"Office with {office_data.city}, {office_data.address}"
+                    f" already exist"
+                ),
+            ) from err
+        raise err
     await session.commit()
     await session.refresh(office)
     return office
@@ -70,7 +85,7 @@ async def create_office(
 
 @router.patch(
     "/{office_id}/",
-    response_model=so.OfficeResponse,
+    response_model=schemas_office.OfficeResponse,
     dependencies=[
         fa.Depends(
             dependency.RoleChecker(
@@ -82,11 +97,25 @@ async def create_office(
 async def update_office(
     session: dependency.AsyncSessionDepency,
     office_id: int,
-    office_data: so.UpdateOffice,
+    office_data: schemas_office.UpdateOffice,
 ):
     data = office_data.model_dump(exclude_unset=True)
     data["id"] = office_id
-    office = await co.Office(session).create_or_update("update", data)
+    try:
+        office = await OfficeService(session).update_office(data)
+    except IntegrityError as err:
+        if (
+            err.orig is not None
+            and "address_city_constraint" in err.orig.args[0]
+        ):
+            raise fa.HTTPException(
+                status_code=fa.status.HTTP_409_CONFLICT,
+                detail=(
+                    f"Office with {office_data.city}, {office_data.address}"
+                    f" already exist"
+                ),
+            ) from err
+        raise err
     await session.commit()
     await session.refresh(office)
     return office

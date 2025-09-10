@@ -1,16 +1,16 @@
 import json
-from pathlib import Path
 
 import fastapi as fa
 from faker import Faker
 from fastapi.responses import JSONResponse
+from sqlalchemy.exc import IntegrityError
 
-import crud.user as cu
 import models
 from core import cookie, dependency, security
 from core.celery_app import send_email
-from core.utils import write_file
+from repositories import UserRepository
 from schemas import user as schema_user
+from services import UserService
 
 
 router = fa.APIRouter(
@@ -25,14 +25,10 @@ async def create_upload_avatar(
     user: dependency.GetCurrentUser,
     file: fa.UploadFile,
 ):
-    if user.avatar != "":
-        file_path = Path(user.avatar)
-        file_path.unlink()
-
-    user.avatar = write_file(
-        file.filename,  # type: ignore
-        await file.read(),
+    await UserService(session).set_avatar(
+        user, await file.read(), str(file.filename)
     )
+
     await session.commit()
     await session.refresh(user)
     return user
@@ -67,8 +63,15 @@ async def create_user(
     session: dependency.AsyncSessionDepency,
 ):
     data = user_data.model_dump()
-    data["password"] = security.get_password_hash(data["password"])
-    user = await cu.User(session).create_or_update("create", data)
+    try:
+        user = await UserService(session).create_user(data)
+    except IntegrityError as err:
+        if err.orig is not None and "ix_users_email" in err.orig.args[0]:
+            raise fa.HTTPException(
+                status_code=fa.status.HTTP_409_CONFLICT,
+                detail=f"User with {data['email']} already exist",
+            ) from err
+        raise err
     await session.commit()
     await session.refresh(user)
     return user
@@ -82,7 +85,7 @@ async def create_user(
     ],
 )
 async def get_users(session: dependency.AsyncSessionDepency):
-    return await cu.User(session).get_items()
+    return await UserService(session).get_users()
 
 
 @router.get("/me/", response_model=schema_user.UserResponse)
@@ -94,7 +97,7 @@ async def get_user_id(user: dependency.GetCurrentUser):
 async def reset_password(
     email: schema_user.ResetPassword, session: dependency.AsyncSessionDepency
 ):
-    user = await cu.User(session).get_user(email=email.email)
+    user = await UserRepository(session).get_user(email=email.email)
     if user is None:
         raise fa.HTTPException(
             status_code=fa.status.HTTP_404_NOT_FOUND, detail="User not found"
@@ -125,10 +128,16 @@ async def update_user(
     session: dependency.AsyncSessionDepency,
 ):
     data = user_data.model_dump(exclude_unset=True)
-    if data.get("password"):
-        data["password"] = security.get_password_hash(data["password"])
     data["id"] = user_id
-    user = await cu.User(session).create_or_update("update", data)
+    try:
+        user = await UserService(session).update_user(data)
+    except IntegrityError as err:
+        if err.orig is not None and "ix_users_email" in err.orig.args[0]:
+            raise fa.HTTPException(
+                status_code=fa.status.HTTP_409_CONFLICT,
+                detail=f"User with {data['email']} already exist",
+            ) from err
+        raise err
     await session.commit()
     await session.refresh(user)
     return user
