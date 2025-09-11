@@ -138,6 +138,10 @@ async def update_user(
                 detail=f"User with {data['email']} already exist",
             ) from err
         raise err
+    if user is None:
+        raise fa.HTTPException(
+            status_code=fa.status.HTTP_404_NOT_FOUND, detail="User not found"
+        )
     await session.commit()
     await session.refresh(user)
     return user

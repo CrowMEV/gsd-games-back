@@ -1,4 +1,4 @@
-from typing import Any, Literal, Sequence
+from typing import Sequence
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -14,24 +14,8 @@ class GameRoomServive(ServiceWithImage[models.GameRoom]):
             "gameroom": GameRoomRepository(self.session),
         }
 
-    async def get_gameroom(self, gameroom_id: int) -> models.GameRoom:
+    async def get_gameroom(self, gameroom_id: int) -> models.GameRoom | None:
         return await self.repository["gameroom"].get_item_id(gameroom_id)
 
     async def get_gamerooms(self) -> Sequence[models.GameRoom]:
         return await self.repository["gameroom"].get_items()
-
-    async def create(
-        self,
-        repository_name: Literal["game", "gameroom"],
-        data: dict[str, Any],
-    ) -> models.GameRoom:
-
-        return await super().create(repository_name, data)
-
-    async def update(
-        self,
-        repository_name: Literal["game", "gameroom"],
-        data: dict[str, Any],
-    ) -> models.GameRoom:
-
-        return await super().update(repository_name, data)

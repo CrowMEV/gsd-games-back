@@ -29,7 +29,13 @@ async def get_gamerooms(session: dependency.AsyncSessionDepency):
 async def get_gameroom_id(
     gameroom_id: int, session: dependency.AsyncSessionDepency
 ):
-    return await GameRoomServive(session).get_gameroom(gameroom_id)
+    gameroom = await GameRoomServive(session).get_gameroom(gameroom_id)
+    if gameroom is None:
+        raise fa.HTTPException(
+            status_code=fa.status.HTTP_404_NOT_FOUND,
+            detail="GameRoom not found",
+        )
+    return gameroom
 
 
 @router.post(
@@ -85,6 +91,11 @@ async def update_gameroom(
         data["image_content"] = await image.read()
     data["id"] = gameroom_id
     gameroom = await GameRoomServive(session).update("gameroom", data)
+    if gameroom is None:
+        raise fa.HTTPException(
+            status_code=fa.status.HTTP_404_NOT_FOUND,
+            detail="GameRoom not found",
+        )
     await session.commit()
     await session.refresh(gameroom)
     return gameroom

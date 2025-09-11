@@ -10,12 +10,6 @@ from services import OfficeService
 router = fa.APIRouter(
     prefix="/offices",
     tags=["offices"],
-)
-
-
-@router.get(
-    "/",
-    response_model=list[schemas_office.OfficeResponse],
     dependencies=[
         fa.Depends(
             dependency.RoleChecker(
@@ -23,6 +17,12 @@ router = fa.APIRouter(
             )
         )
     ],
+)
+
+
+@router.get(
+    "/",
+    response_model=list[schemas_office.OfficeResponse],
 )
 async def get_offices(session: dependency.AsyncSessionDepency):
     return await OfficeService(session).get_offices()
@@ -31,31 +31,22 @@ async def get_offices(session: dependency.AsyncSessionDepency):
 @router.get(
     "/{office_id}/",
     response_model=schemas_office.OfficeResponse,
-    dependencies=[
-        fa.Depends(
-            dependency.RoleChecker(
-                [models.RoleChoice.ADMIN, models.RoleChoice.STAFF]
-            )
-        )
-    ],
 )
 async def get_office_id(
     office_id: int, session: dependency.AsyncSessionDepency
 ):
-    return await OfficeService(session).get_office(office_id)
+    office = await OfficeService(session).get_office(office_id)
+    if office is None:
+        raise fa.HTTPException(
+            status_code=fa.status.HTTP_404_NOT_FOUND, detail="Office not found"
+        )
+    return office
 
 
 @router.post(
     "/",
     response_model=schemas_office.OfficeResponse,
     status_code=fa.status.HTTP_201_CREATED,
-    dependencies=[
-        fa.Depends(
-            dependency.RoleChecker(
-                [models.RoleChoice.ADMIN, models.RoleChoice.STAFF]
-            )
-        )
-    ],
 )
 async def create_office(
     session: dependency.AsyncSessionDepency,
@@ -86,13 +77,6 @@ async def create_office(
 @router.patch(
     "/{office_id}/",
     response_model=schemas_office.OfficeResponse,
-    dependencies=[
-        fa.Depends(
-            dependency.RoleChecker(
-                [models.RoleChoice.ADMIN, models.RoleChoice.STAFF]
-            )
-        )
-    ],
 )
 async def update_office(
     session: dependency.AsyncSessionDepency,
@@ -116,6 +100,10 @@ async def update_office(
                 ),
             ) from err
         raise err
+    if office is None:
+        raise fa.HTTPException(
+            status_code=fa.status.HTTP_404_NOT_FOUND, detail="Office not found"
+        )
     await session.commit()
     await session.refresh(office)
     return office

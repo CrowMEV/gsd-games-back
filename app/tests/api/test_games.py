@@ -33,6 +33,13 @@ async def test_get_game_id(
     )
 
 
+async def test_get_game_id_not_found(client: AsyncClient):
+
+    response = await client.get("/games/1/")
+    assert response.status_code == status.HTTP_404_NOT_FOUND
+    assert response.json()["detail"] == "Game not found"
+
+
 async def test_create_game(
     admin_client: AsyncClient,
     path_image: Path,
@@ -50,6 +57,25 @@ async def test_create_game(
         )
 
     assert response.status_code == status.HTTP_201_CREATED
+
+
+async def test_create_game_not_admin(
+    user_client: AsyncClient,
+    path_image: Path,
+):
+    data = {
+        "title": "Monopoly",
+        "description": "Money money money",
+        "rules": "mercilessly",
+        "min_people": 2,
+        "max_people": 10,
+    }
+    with open(path_image, "rb") as file:
+        response = await user_client.post(
+            "/games/", data=data, files={"image": file}
+        )
+
+    assert response.status_code == status.HTTP_403_FORBIDDEN
 
 
 async def test_double_title_game(
@@ -93,6 +119,34 @@ async def test_update_game(
     assert response.status_code == status.HTTP_200_OK
     assert response.json()["description"] == updated_data["description"]
     assert response.json()["rules"] == updated_data["rules"]
+
+
+async def test_update_game_not_admin(
+    user_client: AsyncClient, factory: data_factory.FactoryCallback
+):
+
+    game = await factory(data_factory.GameFactory)
+    assert not isinstance(game, Sequence)
+
+    updated_data = {
+        "description": "Description about game",
+        "rules": "mercilessly",
+    }
+    response = await user_client.patch(f"/games/{game.id}/", data=updated_data)
+
+    assert response.status_code == status.HTTP_403_FORBIDDEN
+
+
+async def test_update_game_not_found(admin_client: AsyncClient):
+
+    updated_data = {
+        "description": "Description about game",
+        "rules": "mercilessly",
+    }
+    response = await admin_client.patch("/games/1/", data=updated_data)
+
+    assert response.status_code == status.HTTP_404_NOT_FOUND
+    assert response.json()["detail"] == "Game not found"
 
 
 async def test_update_game_with_image(
