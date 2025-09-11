@@ -22,7 +22,12 @@ async def get_games(session: dependency.AsyncSessionDepency):
 
 @router.get("/{game_id}/", response_model=schema_game.GameResponse)
 async def get_game_id(game_id: int, session: dependency.AsyncSessionDepency):
-    return await GameService(session).get_game(game_id)
+    game = await GameService(session).get_game(game_id)
+    if game is None:
+        raise fa.HTTPException(
+            status_code=fa.status.HTTP_404_NOT_FOUND, detail="Game not found"
+        )
+    return game
 
 
 @router.post(
@@ -94,6 +99,10 @@ async def update_game(
                 detail=f"Game with {data['title']} already exist",
             ) from err
         raise err
+    if game is None:
+        raise fa.HTTPException(
+            status_code=fa.status.HTTP_404_NOT_FOUND, detail="Game not found"
+        )
     await session.commit()
     await session.refresh(game)
     return game

@@ -11,12 +11,17 @@ from tests import factory as data_factory
 pytestmark = pytest.mark.anyio
 
 
-async def test_get_office(
-    admin_client: AsyncClient, factory: data_factory.FactoryCallback
-):
-    await factory(data_factory.OfficeFactory, 10)
+async def test_get_offices(admin_client: AsyncClient):
     response = await admin_client.get("/offices/")
     assert response.status_code == status.HTTP_200_OK
+
+
+async def test_get_offices_not_admin(
+    user_client: AsyncClient, factory: data_factory.FactoryCallback
+):
+    await factory(data_factory.OfficeFactory, 10)
+    response = await user_client.get("/offices/")
+    assert response.status_code == status.HTTP_403_FORBIDDEN
 
 
 async def test_get_office_id(
@@ -33,6 +38,21 @@ async def test_get_office_id(
     )
 
 
+async def test_get_office_id_not_admin(
+    user_client: AsyncClient, factory: data_factory.FactoryCallback
+):
+    office = await factory(data_factory.OfficeFactory)
+    assert not isinstance(office, Sequence)
+    response = await user_client.get(f"/offices/{office.id}/")
+    assert response.status_code == status.HTTP_403_FORBIDDEN
+
+
+async def test_get_office_id_not_found(admin_client: AsyncClient):
+    response = await admin_client.get("/offices/1/")
+    assert response.status_code == status.HTTP_404_NOT_FOUND
+    assert response.json()["detail"] == "Office not found"
+
+
 async def test_create_office(admin_client: AsyncClient):
     data = {
         "city": "Moscow",
@@ -40,6 +60,15 @@ async def test_create_office(admin_client: AsyncClient):
     }
     response = await admin_client.post("/offices/", json=data)
     assert response.status_code == status.HTTP_201_CREATED
+
+
+async def test_create_office_not_admin(user_client: AsyncClient):
+    data = {
+        "city": "Moscow",
+        "address": "Patriky, 18",
+    }
+    response = await user_client.post("/offices/", json=data)
+    assert response.status_code == status.HTTP_403_FORBIDDEN
 
 
 async def test_create_double_address(admin_client: AsyncClient):
@@ -72,6 +101,35 @@ async def test_update_office(
     assert response.status_code == status.HTTP_200_OK
     assert response.json()["city"] == updated_data["city"]
     assert response.json()["address"] == updated_data["address"]
+
+
+async def test_update_office_not_found(admin_client: AsyncClient):
+
+    updated_data = {
+        "city": "Irkutsk",
+        "address": "Lenina, 22",
+    }
+    response = await admin_client.patch("/offices/1/", json=updated_data)
+
+    assert response.status_code == status.HTTP_404_NOT_FOUND
+    assert response.json()["detail"] == "Office not found"
+
+
+async def test_update_office_not_admin(
+    user_client: AsyncClient, factory: data_factory.FactoryCallback
+):
+    office = await factory(data_factory.OfficeFactory)
+
+    updated_data = {
+        "city": "Irkutsk",
+        "address": "Lenina, 22",
+    }
+    assert not isinstance(office, Sequence)
+    response = await user_client.patch(
+        f"/offices/{office.id}/", json=updated_data
+    )
+
+    assert response.status_code == status.HTTP_403_FORBIDDEN
 
 
 async def test_double_update_office(

@@ -1,7 +1,6 @@
 from typing import Any, Generic, Sequence
 
 import sqlalchemy as sa
-from fastapi import HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 import models
@@ -24,17 +23,12 @@ class Base(Generic[models.MODEL]):
         )
         return result.unique().all()
 
-    async def get_item_id(self, item_id: int) -> models.MODEL:
+    async def get_item_id(self, item_id: int) -> models.MODEL | None:
         stmt = sa.select(self.model).where(self.model.id == item_id)
         result = await self.session.scalar(stmt)
-        if result is None:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"{self.model.__name__} not found",
-            )
         return result
 
-    async def update_item(self, data: dict[str, Any]) -> models.MODEL:
+    async def update_item(self, data: dict[str, Any]) -> models.MODEL | None:
         item_id = data.pop("id")
         stmt = (
             sa.update(self.model)
@@ -44,11 +38,6 @@ class Base(Generic[models.MODEL]):
         )
         item = await self.session.scalar(stmt)
         await self.session.flush()
-        if item is None:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"{self.model.__name__} not found",
-            )
         return item
 
     async def delete_item(self, item_id: int) -> None:

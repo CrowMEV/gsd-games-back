@@ -16,7 +16,7 @@ class OfficeService:
     async def get_offices(self) -> Sequence[models.Office]:
         return await self.repository["office"].get_items()
 
-    async def get_office(self, office_id: int) -> models.Office:
+    async def get_office(self, office_id: int) -> models.Office | None:
         return await self.repository["office"].get_item_id(office_id)
 
     async def create_office(
@@ -26,5 +26,5 @@ class OfficeService:
 
     async def update_office(
         self, office_data: dict[str, Any]
-    ) -> models.Office:
+    ) -> models.Office | None:
         return await self.repository["office"].update_item(office_data)

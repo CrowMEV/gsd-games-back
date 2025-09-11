@@ -42,5 +42,7 @@ class UserService:
         )
         return await self.repository["user"].create_item(user_data)
 
-    async def update_user(self, user_data: dict[str, Any]) -> models.User:
+    async def update_user(
+        self, user_data: dict[str, Any]
+    ) -> models.User | None:
         return await self.repository["user"].update_item(user_data)
