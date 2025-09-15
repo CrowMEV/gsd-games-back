@@ -24,9 +24,7 @@ router = fa.APIRouter(
     "/avatar/",
     response_model=schema_user.User,
     responses={
-        400: {"model": schema_status.StatusCode},
         401: {"model": schema_status.StatusCode},
-        403: {"model": schema_status.StatusCode},
     },
 )
 async def create_upload_avatar(
@@ -46,6 +44,7 @@ async def create_upload_avatar(
 @router.post(
     "/login/",
     response_class=JSONResponse,
+    responses={401: {"model": schema_status.StatusCode}},
 )
 async def login(
     session: dependency.AsyncSessionDepency,
@@ -115,7 +114,6 @@ async def get_users(session: dependency.AsyncSessionDepency):
     responses={
         400: {"model": schema_status.StatusCode},
         401: {"model": schema_status.StatusCode},
-        403: {"model": schema_status.StatusCode},
     },
 )
 async def get_user_id(user: dependency.GetCurrentUser):
