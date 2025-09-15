@@ -19,7 +19,11 @@ router = fa.APIRouter(
 )
 
 
-@router.post("/avatar/", response_model=schema_user.User)
+@router.post(
+    "/avatar/",
+    response_model=schema_user.User,
+    responses={200: {"description": "Ok"}},
+)
 async def create_upload_avatar(
     session: dependency.AsyncSessionDepency,
     user: dependency.GetCurrentUser,
@@ -34,7 +38,11 @@ async def create_upload_avatar(
     return user
 
 
-@router.post("/login/", response_class=JSONResponse)
+@router.post(
+    "/login/",
+    response_class=JSONResponse,
+    responses={200: {"description": "Ok"}},
+)
 async def login(
     session: dependency.AsyncSessionDepency,
     data: schema_user.UserLogin,
@@ -46,7 +54,11 @@ async def login(
     return response
 
 
-@router.post("/logout/", response_class=JSONResponse)
+@router.post(
+    "/logout/",
+    response_class=JSONResponse,
+    responses={200: {"description": "Ok"}},
+)
 async def logout():
     response = JSONResponse(content="OK", status_code=fa.status.HTTP_200_OK)
     cookie.drop_cookie(response)
@@ -56,6 +68,10 @@ async def logout():
 @router.post(
     "/",
     response_model=schema_user.UserResponse,
+    responses={
+        201: {"description": "Created"},
+        409: {"description": "Conflict"},
+    },
     status_code=fa.status.HTTP_201_CREATED,
 )
 async def create_user(

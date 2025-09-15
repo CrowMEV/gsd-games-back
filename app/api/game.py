@@ -15,12 +15,20 @@ router = fa.APIRouter(
 )
 
 
-@router.get("/", response_model=list[schema_game.GameResponse])
+@router.get(
+    "/",
+    response_model=list[schema_game.GameResponse],
+    responses={200: {"description": "Ok"}},
+)
 async def get_games(session: dependency.AsyncSessionDepency):
     return await GameService(session).get_games()
 
 
-@router.get("/{game_id}/", response_model=schema_game.GameResponse)
+@router.get(
+    "/{game_id}/",
+    response_model=schema_game.GameResponse,
+    responses={200: {"description": "Ok"}, 404: {"description": "Not found"}},
+)
 async def get_game_id(game_id: int, session: dependency.AsyncSessionDepency):
     game = await GameService(session).get_game(game_id)
     if game is None:
@@ -33,6 +41,10 @@ async def get_game_id(game_id: int, session: dependency.AsyncSessionDepency):
 @router.post(
     "/",
     response_model=schema_game.GameResponse,
+    responses={
+        201: {"description": "Created"},
+        409: {"description": "Conflict"},
+    },
     status_code=fa.status.HTTP_201_CREATED,
     dependencies=[
         fa.Depends(
@@ -67,6 +79,11 @@ async def create_game(
 @router.patch(
     "/{game_id}/",
     response_model=schema_game.GameResponse,
+    responses={
+        200: {"description": "Ok"},
+        404: {"description": "Not found"},
+        409: {"description": "Conflict"},
+    },
     dependencies=[
         fa.Depends(
             dependency.RoleChecker(

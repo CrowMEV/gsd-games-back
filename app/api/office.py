@@ -23,6 +23,7 @@ router = fa.APIRouter(
 @router.get(
     "/",
     response_model=list[schemas_office.OfficeResponse],
+    responses={200: {"description": "Ok"}},
 )
 async def get_offices(session: dependency.AsyncSessionDepency):
     return await OfficeService(session).get_offices()
@@ -31,6 +32,7 @@ async def get_offices(session: dependency.AsyncSessionDepency):
 @router.get(
     "/{office_id}/",
     response_model=schemas_office.OfficeResponse,
+    responses={200: {"description": "Ok"}, 404: {"description": "Not found"}},
 )
 async def get_office_id(
     office_id: int, session: dependency.AsyncSessionDepency
@@ -46,6 +48,10 @@ async def get_office_id(
 @router.post(
     "/",
     response_model=schemas_office.OfficeResponse,
+    responses={
+        201: {"description": "Created"},
+        409: {"description": "Conflict"},
+    },
     status_code=fa.status.HTTP_201_CREATED,
 )
 async def create_office(
@@ -77,6 +83,11 @@ async def create_office(
 @router.patch(
     "/{office_id}/",
     response_model=schemas_office.OfficeResponse,
+    responses={
+        200: {"description": "Ok"},
+        404: {"description": "Not found"},
+        409: {"description": "Conflict"},
+    },
 )
 async def update_office(
     session: dependency.AsyncSessionDepency,

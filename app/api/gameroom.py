@@ -17,6 +17,7 @@ router = fa.APIRouter(
 @router.get(
     "/",
     response_model=list[schema_gamerooms.GameRoomResponse],
+    responses={200: {"description": "Ok"}},
 )
 async def get_gamerooms(session: dependency.AsyncSessionDepency):
     return await GameRoomServive(session).get_gamerooms()
@@ -25,6 +26,7 @@ async def get_gamerooms(session: dependency.AsyncSessionDepency):
 @router.get(
     "/{gameroom_id}/",
     response_model=schema_gamerooms.GameRoomResponse,
+    responses={200: {"description": "Ok"}, 404: {"description": "Not found"}},
 )
 async def get_gameroom_id(
     gameroom_id: int, session: dependency.AsyncSessionDepency
@@ -42,6 +44,10 @@ async def get_gameroom_id(
     "/",
     response_model=schema_gamerooms.GameRoomResponse,
     status_code=fa.status.HTTP_201_CREATED,
+    responses={
+        201: {"description": "Created"},
+        409: {"description": "Conflict"},
+    },
     dependencies=[
         fa.Depends(
             dependency.RoleChecker(
@@ -67,6 +73,11 @@ async def create_gameroom(
 @router.patch(
     "/{gameroom_id}/",
     response_model=schema_gamerooms.GameRoomResponse,
+    responses={
+        200: {"description": "Created"},
+        404: {"description": "Not found"},
+        409: {"description": "Conflict"},
+    },
     dependencies=[
         fa.Depends(
             dependency.RoleChecker(
