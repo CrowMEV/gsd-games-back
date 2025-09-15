@@ -5,6 +5,7 @@ import fastapi as fa
 import models
 from core import dependency
 from schemas import gameroom as schema_gamerooms
+from schemas import status_codes as schema_status
 from services import GameRoomServive
 
 
@@ -17,7 +18,6 @@ router = fa.APIRouter(
 @router.get(
     "/",
     response_model=list[schema_gamerooms.GameRoomResponse],
-    responses={200: {"description": "Ok"}},
 )
 async def get_gamerooms(session: dependency.AsyncSessionDepency):
     return await GameRoomServive(session).get_gamerooms()
@@ -26,7 +26,7 @@ async def get_gamerooms(session: dependency.AsyncSessionDepency):
 @router.get(
     "/{gameroom_id}/",
     response_model=schema_gamerooms.GameRoomResponse,
-    responses={200: {"description": "Ok"}, 404: {"description": "Not found"}},
+    responses={404: {"model": schema_status.StatusCode}},
 )
 async def get_gameroom_id(
     gameroom_id: int, session: dependency.AsyncSessionDepency
@@ -45,8 +45,9 @@ async def get_gameroom_id(
     response_model=schema_gamerooms.GameRoomResponse,
     status_code=fa.status.HTTP_201_CREATED,
     responses={
-        201: {"description": "Created"},
-        409: {"description": "Conflict"},
+        400: {"model": schema_status.StatusCode},
+        401: {"model": schema_status.StatusCode},
+        403: {"model": schema_status.StatusCode},
     },
     dependencies=[
         fa.Depends(
@@ -74,9 +75,10 @@ async def create_gameroom(
     "/{gameroom_id}/",
     response_model=schema_gamerooms.GameRoomResponse,
     responses={
-        200: {"description": "Created"},
-        404: {"description": "Not found"},
-        409: {"description": "Conflict"},
+        400: {"model": schema_status.StatusCode},
+        401: {"model": schema_status.StatusCode},
+        403: {"model": schema_status.StatusCode},
+        404: {"model": schema_status.StatusCode},
     },
     dependencies=[
         fa.Depends(

@@ -9,6 +9,7 @@ import models
 from core import cookie, dependency, security
 from core.celery_app import send_email
 from repositories import UserRepository
+from schemas import status_codes as schema_status
 from schemas import user as schema_user
 from services import UserService
 
@@ -22,7 +23,11 @@ router = fa.APIRouter(
 @router.post(
     "/avatar/",
     response_model=schema_user.User,
-    responses={200: {"description": "Ok"}},
+    responses={
+        400: {"model": schema_status.StatusCode},
+        401: {"model": schema_status.StatusCode},
+        403: {"model": schema_status.StatusCode},
+    },
 )
 async def create_upload_avatar(
     session: dependency.AsyncSessionDepency,
@@ -41,7 +46,6 @@ async def create_upload_avatar(
 @router.post(
     "/login/",
     response_class=JSONResponse,
-    responses={200: {"description": "Ok"}},
 )
 async def login(
     session: dependency.AsyncSessionDepency,
@@ -57,7 +61,6 @@ async def login(
 @router.post(
     "/logout/",
     response_class=JSONResponse,
-    responses={200: {"description": "Ok"}},
 )
 async def logout():
     response = JSONResponse(content="OK", status_code=fa.status.HTTP_200_OK)
@@ -68,10 +71,7 @@ async def logout():
 @router.post(
     "/",
     response_model=schema_user.UserResponse,
-    responses={
-        201: {"description": "Created"},
-        409: {"description": "Conflict"},
-    },
+    responses={409: {"model": schema_status.StatusCode}},
     status_code=fa.status.HTTP_201_CREATED,
 )
 async def create_user(
@@ -96,6 +96,11 @@ async def create_user(
 @router.get(
     "/",
     response_model=list[schema_user.UserResponse],
+    responses={
+        400: {"model": schema_status.StatusCode},
+        401: {"model": schema_status.StatusCode},
+        403: {"model": schema_status.StatusCode},
+    },
     dependencies=[
         fa.Depends(dependency.RoleChecker([models.RoleChoice.ADMIN]))
     ],
@@ -104,12 +109,27 @@ async def get_users(session: dependency.AsyncSessionDepency):
     return await UserService(session).get_users()
 
 
-@router.get("/me/", response_model=schema_user.UserResponse)
+@router.get(
+    "/me/",
+    response_model=schema_user.UserResponse,
+    responses={
+        400: {"model": schema_status.StatusCode},
+        401: {"model": schema_status.StatusCode},
+        403: {"model": schema_status.StatusCode},
+    },
+)
 async def get_user_id(user: dependency.GetCurrentUser):
     return user
 
 
-@router.patch("/", response_class=JSONResponse)
+@router.patch(
+    "/",
+    response_class=JSONResponse,
+    responses={
+        401: {"model": schema_status.StatusCode},
+        404: {"model": schema_status.StatusCode},
+    },
+)
 async def reset_password(
     email: schema_user.ResetPassword, session: dependency.AsyncSessionDepency
 ):
@@ -136,6 +156,13 @@ async def reset_password(
 @router.patch(
     "/{user_id}/",
     response_model=schema_user.UserResponse,
+    responses={
+        400: {"model": schema_status.StatusCode},
+        401: {"model": schema_status.StatusCode},
+        403: {"model": schema_status.StatusCode},
+        404: {"model": schema_status.StatusCode},
+        409: {"model": schema_status.StatusCode},
+    },
     dependencies=[fa.Depends(dependency.get_current_active_user)],
 )
 async def update_user(
