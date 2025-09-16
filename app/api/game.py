@@ -6,6 +6,7 @@ from sqlalchemy.exc import IntegrityError
 import models
 from core import dependency
 from schemas import game as schema_game
+from schemas import status_codes as schema_status
 from services import GameService
 
 
@@ -15,12 +16,19 @@ router = fa.APIRouter(
 )
 
 
-@router.get("/", response_model=list[schema_game.GameResponse])
+@router.get(
+    "/",
+    response_model=list[schema_game.GameResponse],
+)
 async def get_games(session: dependency.AsyncSessionDepency):
     return await GameService(session).get_games()
 
 
-@router.get("/{game_id}/", response_model=schema_game.GameResponse)
+@router.get(
+    "/{game_id}/",
+    response_model=schema_game.GameResponse,
+    responses={404: {"model": schema_status.StatusCode}},
+)
 async def get_game_id(game_id: int, session: dependency.AsyncSessionDepency):
     game = await GameService(session).get_game(game_id)
     if game is None:
@@ -33,6 +41,12 @@ async def get_game_id(game_id: int, session: dependency.AsyncSessionDepency):
 @router.post(
     "/",
     response_model=schema_game.GameResponse,
+    responses={
+        400: {"model": schema_status.StatusCode},
+        401: {"model": schema_status.StatusCode},
+        403: {"model": schema_status.StatusCode},
+        409: {"model": schema_status.StatusCode},
+    },
     status_code=fa.status.HTTP_201_CREATED,
     dependencies=[
         fa.Depends(
@@ -67,6 +81,13 @@ async def create_game(
 @router.patch(
     "/{game_id}/",
     response_model=schema_game.GameResponse,
+    responses={
+        400: {"model": schema_status.StatusCode},
+        401: {"model": schema_status.StatusCode},
+        403: {"model": schema_status.StatusCode},
+        404: {"model": schema_status.StatusCode},
+        409: {"model": schema_status.StatusCode},
+    },
     dependencies=[
         fa.Depends(
             dependency.RoleChecker(

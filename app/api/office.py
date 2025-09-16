@@ -4,6 +4,7 @@ from sqlalchemy.exc import IntegrityError
 import models
 import schemas.office as schemas_office
 from core import dependency
+from schemas import status_codes as schema_status
 from services import OfficeService
 
 
@@ -17,6 +18,13 @@ router = fa.APIRouter(
             )
         )
     ],
+    responses={
+        400: {"model": schema_status.StatusCode},
+        401: {"model": schema_status.StatusCode},
+        403: {"model": schema_status.StatusCode},
+        404: {"model": schema_status.StatusCode},
+        409: {"model": schema_status.StatusCode},
+    },
 )
 
 
