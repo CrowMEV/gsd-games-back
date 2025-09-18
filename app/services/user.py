@@ -4,7 +4,6 @@ from typing import Any, Sequence
 from sqlalchemy.ext.asyncio import AsyncSession
 
 import models
-from core import security
 from core.settings import settings
 from repositories import UserRepository
 from schemas import user as schema_user
@@ -33,14 +32,22 @@ class UserService:
     async def get_users(self) -> Sequence[models.User]:
         return await self.repository["user"].get_items()
 
-    async def get_user(self, email: str) -> models.User | None:
-        return await self.repository["user"].get_user(email)
+    async def get_user_by_id(self, user_id: int) -> models.User | None:
+        return await self.repository["user"].get_item_id(user_id)
+
+    async def get_user_by_phone(self, phone: str) -> models.User | None:
+        return await self.repository["user"].get_user_by_phone(phone)
 
     async def create_user(self, user_data: dict[str, Any]) -> models.User:
-        user_data["password"] = security.get_password_hash(
-            user_data["password"]
-        )
         return await self.repository["user"].create_item(user_data)
+
+    async def login(self, user_data: dict[str, Any]) -> models.User:
+        user = await self.repository["user"].get_user_by_phone(
+            user_data["phone"]
+        )
+        if user is None:
+            user = await self.repository["user"].create_item(user_data)
+        return user
 
     async def update_user(
         self, user_data: dict[str, Any]

@@ -10,7 +10,7 @@ class User(common_repository.Base[models.User]):
         super().__init__(session)
         self.model = models.User
 
-    async def get_user(self, email: str) -> models.User | None:
+    async def get_user_by_phone(self, phone: str) -> models.User | None:
         return await self.session.scalar(
-            sa.select(self.model).where(self.model.email == email)
+            sa.select(self.model).where(self.model.phone == phone)
         )

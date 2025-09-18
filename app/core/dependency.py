@@ -8,7 +8,7 @@ from jwt.exceptions import InvalidTokenError
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 
 import models
-from core import cookie, security
+from core import cookie
 from core.settings import settings
 from schemas import user as user_schema
 from services import UserService
@@ -37,12 +37,12 @@ async def get_current_user(
         payload = jwt.decode(
             token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM]
         )
-        email: str = payload.get("user_email")
-        if email is None:
+        user_id: str = payload.get("user_id")
+        if user_id is None:
             raise credentials_exception
     except InvalidTokenError as err:
         raise credentials_exception from err
-    user = await UserService(session).get_user(email)
+    user = await UserService(session).get_user_by_id(int(user_id))
     if user is None:
         raise credentials_exception
     return user
@@ -66,21 +66,18 @@ GetCurrentUser = Annotated[
 AuthentificateDocs = Annotated[HTTPBasicCredentials, Depends(HTTPBasic())]
 
 
-async def secure_docs(
-    credentials: AuthentificateDocs, session: AsyncSessionDepency
-) -> None:
-    exception_message = HTTPException(
-        status_code=status.HTTP_401_UNAUTHORIZED,
-        detail="Incorrect email or password",
-    )
-    user = await UserService(session).get_user(credentials.username)
-    if not user:
-        raise exception_message
-    if (
-        not security.verify_password(credentials.password, user.password)
-        and user.role == models.RoleChoice.ADMIN
-    ):
-        raise exception_message
+# async def secure_docs(
+#     credentials: AuthentificateDocs, session: AsyncSessionDepency
+# ) -> None:
+#     exception_message = HTTPException(
+#         status_code=status.HTTP_401_UNAUTHORIZED,
+#         detail="Incorrect email or password",
+#     )
+#     user = ""
+#     if not user:
+#         raise exception_message
+#     if not user.role == models.RoleChoice.ADMIN:
+#         raise exception_message
 
 
 class RoleChecker:
