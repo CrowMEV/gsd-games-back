@@ -115,12 +115,11 @@ async def admin_client_fixture(
 
     user = await factory(
         data_factory.UserFactory,
-        password="password123",
-        email="test-admin@email.org",
+        phone="+79000000001",
         role=models.RoleChoice.ADMIN,
     )
     assert not isinstance(user, Sequence)
-    token = create_access_token({"user_email": user.email})
+    token = create_access_token({"user_id": user.id})
     async with AsyncClient(
         transport=ASGITransport(app=test_app), base_url="http://test"
     ) as ac:
@@ -137,12 +136,11 @@ async def user_client_fixture(
 
     user = await factory(
         data_factory.UserFactory,
-        password="password123",
-        email="test-user@email.org",
+        phone="+79000000000",
         role=models.RoleChoice.USER,
     )
     assert not isinstance(user, Sequence)
-    token = create_access_token({"user_email": user.email})
+    token = create_access_token({"user_id": user.id})
     async with AsyncClient(
         transport=ASGITransport(app=test_app), base_url="http://test"
     ) as ac:

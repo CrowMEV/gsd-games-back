@@ -6,7 +6,6 @@ from faker import Faker
 from sqlalchemy.ext.asyncio import AsyncSession
 
 import models
-from core.security import get_password_hash
 
 
 fake = Faker()
@@ -53,13 +52,8 @@ class UserFactory(DataFactory):
     async def generate_data(self, count=1, **kwargs) -> None:
         self.list_data.extend(
             {
-                "email": kwargs.get("email", fake.email()),
-                "password": get_password_hash(
-                    kwargs.get("password", fake.password())
-                ),
-                "phone": kwargs.get("phone", ""),
+                "phone": kwargs.get("phone", self.generate_phone_number()),
                 "name": kwargs.get("name", fake.name()),
-                "birth_date": kwargs.get("birth_date", fake.date_of_birth()),
                 "is_active": kwargs.get("is_active", True),
                 "role": kwargs.get(
                     "role", random.choice(list(models.RoleChoice))
@@ -68,6 +62,12 @@ class UserFactory(DataFactory):
             for _ in range(count)
         )
         await self.write_to_db()
+
+    def generate_phone_number(self) -> str:
+        phone = "+7"
+        while len(phone) < 12:
+            phone += str(random.randint(0, 9))
+        return phone
 
 
 class GameFactory(DataFactory):
