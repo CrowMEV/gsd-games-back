@@ -41,14 +41,6 @@ class UserService:
     async def create_user(self, user_data: dict[str, Any]) -> models.User:
         return await self.repository["user"].create_item(user_data)
 
-    async def login(self, user_data: dict[str, Any]) -> models.User:
-        user = await self.repository["user"].get_user_by_phone(
-            user_data["phone"]
-        )
-        if user is None:
-            user = await self.repository["user"].create_item(user_data)
-        return user
-
     async def update_user(
         self, user_data: dict[str, Any]
     ) -> models.User | None:

@@ -18,6 +18,10 @@ class Settings(BaseSettings):
     # Redis
     REDIS_HOST: str = "localhost"
     REDIS_PORT: int = 6379
+    REDIS_DB: int = 0
+
+    # Redis TTL for auth sessions (seconds)
+    REDIS_EXPIRE_TIME: int = 60
 
     # fastapi app
     APP_NAME: str = "GSD GAMES"
@@ -60,8 +64,8 @@ class Settings(BaseSettings):
         )
 
     @computed_field
-    def broker_url(self) -> str:
-        return f"redis://{self.REDIS_HOST}:{self.REDIS_PORT}/0"
+    def redis_url(self) -> str:
+        return f"redis://{self.REDIS_HOST}:{self.REDIS_PORT}/{self.REDIS_DB}"
 
 
 settings = Settings()

@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Sequence
+from uuid import uuid4
 
 import pytest
 import sqlalchemy as sa
@@ -48,20 +48,6 @@ async def test_get_user_me(
     )
 
 
-# async def test_create_user(client: AsyncClient):
-
-#     data = {
-#         "name": "Bobik",
-#         "email": "e@example.com",
-#         "password": "password123",
-#     }
-#     response = await client.post("/users/", json=data)
-
-#     assert response.status_code == status.HTTP_201_CREATED
-#     assert response.json()["name"] == data["name"]
-#     assert response.json()["email"] == data["email"]
-
-
 async def test_upload_avatar(
     user_client: AsyncClient,
     path_image: Path,
@@ -74,12 +60,19 @@ async def test_upload_avatar(
     assert response.status_code == status.HTTP_200_OK
 
 
-async def test_login(
-    client: AsyncClient,
-    factory: data_factory.FactoryCallback,
-):
-
-    user = await factory(data_factory.UserFactory)
-    assert not isinstance(user, Sequence)
-    response = await client.post("/users/login/", json={"phone": user.phone})
+# pylint:disable=W0613
+async def test_auth(client: AsyncClient, clean_redis_client):
+    unique_id = str(uuid4())
+    response = await client.post(
+        "/users/get_phone/",
+        json={"unique_id": unique_id, "phone": "+79877441414"},
+    )
     assert response.status_code == status.HTTP_200_OK
+    response = await client.post("/users/auth/", json={"unique_id": unique_id})
+    assert response.status_code == status.HTTP_200_OK
+
+
+async def test_not_found_phone(client: AsyncClient, clean_redis_client):
+    unique_id = str(uuid4())
+    response = await client.post("/users/auth/", json={"unique_id": unique_id})
+    assert response.status_code == status.HTTP_404_NOT_FOUND

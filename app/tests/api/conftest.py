@@ -13,6 +13,7 @@ from sqlalchemy.ext.asyncio import (
 import models
 import tests.factory as data_factory
 from core.dependency import get_async_session
+from core.redis_client import redis_client
 from core.security import create_access_token
 from core.settings import settings
 from main import app
@@ -160,3 +161,9 @@ async def media_dir():
     settings.MEDIA_DIR.mkdir(exist_ok=True)
     yield
     rmtree(settings.MEDIA_DIR)
+
+
+@pytest.fixture
+def clean_redis_client():
+    yield
+    redis_client.flushall()
