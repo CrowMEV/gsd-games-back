@@ -66,20 +66,6 @@ GetCurrentUser = Annotated[
 AuthentificateDocs = Annotated[HTTPBasicCredentials, Depends(HTTPBasic())]
 
 
-# async def secure_docs(
-#     credentials: AuthentificateDocs, session: AsyncSessionDepency
-# ) -> None:
-#     exception_message = HTTPException(
-#         status_code=status.HTTP_401_UNAUTHORIZED,
-#         detail="Incorrect email or password",
-#     )
-#     user = ""
-#     if not user:
-#         raise exception_message
-#     if not user.role == models.RoleChoice.ADMIN:
-#         raise exception_message
-
-
 class RoleChecker:
     def __init__(self, allowed_roles: list[models.RoleChoice]):
         self.allowed_roles = [

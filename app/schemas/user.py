@@ -23,7 +23,7 @@ class Token(BaseModel):
 
 
 class UserLogin(BaseModel):
-    phone: Phone
+    unique_id: str
 
 
 class User(BaseModel):
@@ -42,3 +42,8 @@ class UserResponse(User):
 class UpdateUser(BaseModel):
     name: str | None = None
     phone: Phone | None = None
+
+
+class TelegramIncoming(BaseModel):
+    unique_id: str
+    phone: Phone

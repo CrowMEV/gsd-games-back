@@ -3,6 +3,8 @@ from fastapi.responses import JSONResponse
 
 import models
 from core import cookie, dependency, security
+from core.redis_client import redis_client
+from core.settings import settings
 from schemas import status_codes as schema_status
 from schemas import user as schema_user
 from services import UserService
@@ -12,6 +14,14 @@ router = fa.APIRouter(
     prefix="/users",
     tags=["users"],
 )
+
+
+@router.post("/get_phone/", response_class=JSONResponse)
+async def get_phone_from_telegram(data_json: schema_user.TelegramIncoming):
+    redis_client.set(
+        data_json.unique_id, data_json.phone, ex=settings.REDIS_EXPIRE_TIME
+    )
+    return JSONResponse(content="Ok", status_code=fa.status.HTTP_200_OK)
 
 
 @router.post(
@@ -36,15 +46,31 @@ async def create_upload_avatar(
 
 
 @router.post(
-    "/login/",
+    "/auth/",
     response_class=JSONResponse,
     responses={401: {"model": schema_status.StatusCode}},
 )
-async def login(
+async def authtorization(
     session: dependency.AsyncSessionDepency,
     data: schema_user.UserLogin,
 ):
-    user = await UserService(session).login(data.model_dump())
+    phone: str | None = redis_client.get(
+        data.unique_id
+    )  # type:ignore[assignment]
+    if phone is None:
+        raise fa.HTTPException(
+            status_code=fa.status.HTTP_404_NOT_FOUND,
+            detail="Телефон не найден",
+        )
+    if phone is not None:
+        phone = phone.decode()  # type:ignore[attr-defined]
+
+    user_service = UserService(session)
+    user = await user_service.get_user_by_phone(phone)
+    if user is None:
+        user = await user_service.create_user({"phone": phone})
+        await session.commit()
+        await session.refresh(user)
 
     access_token = security.create_access_token({"user_id": user.id})
     response = JSONResponse(content="OK", status_code=fa.status.HTTP_200_OK)
