@@ -5,43 +5,23 @@ services:
     ports:
       - 80:80
       - 443:443
+    restart: always
     command:
-      # - --log.level=DEBUG
-      - --providers.docker
-      - --providers.docker.exposedbydefault=false
-
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--certificatesresolvers.letsencrypt.acme.httpchallenge=web"
+      - "--certificatesresolvers.letsencrypt.acme.httpchallenge=true"
+      - "--certificatesresolvers.letsencrypt.acme.email=gayfullin.r.i@yandex.ru"
     labels:
       - "traefik.enable=true"
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
-      # - ./.cert/:/cert
-      # - ./traefik_config/:/etc/traefik
-
-  frontend:
-    build:
-      dockerfile: ./Dockerfile.frontend
-    container_name: frontend
-    depends_on:
-      - backend
-    env_file:
-      - .env
-    restart: always
-    volumes:
-      - ./dist:/dist
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.frontend.rule=Host(`gsd-games.ru`)"
-      # - "traefik.http.routers.frontend.tls=true"
-      # - "traefik.http.routers.frontend.entrypoints=websecure"
-      - "traefik.http.services.frontend-service.loadbalancer.server.port=3000"
-    command: serve -s /dist
+      - ./letsencrypt/:/letsencrypt/
+      - ./traefik_config/:/etc/traefik
 
   backend:
     build:
-      dockerfile: ./Dockerfile.back.prod
-      # args:
-      #   - USERNAME=${DOCKER_USER}
-      #   - USER_ID=${USER_ID}
+      dockerfile: ./Dockerfile.back
     container_name: backend
     env_file:
       - .env
@@ -55,10 +35,25 @@ services:
       - ./app:/app
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.backend.rule=Host(`api.gsd-games.ru`)"
-      # - "traefik.http.routers.backend.tls=true"
-      # - "traefik.http.routers.backend.entrypoints=websecure"
+      - "traefik.http.routers.backend.rule=Host(`${API_DOMAIN_NAME}`)"
+      - "traefik.http.routers.backend.entrypoints=websecure"
+      - "traefik.http.routers.backend.tls.certresolver=letsencrypt"
       - "traefik.http.services.backend-service.loadbalancer.server.port=8000"
+
+  frontend:
+    image: nginx:alpine
+    container_name: frontend
+    restart: always
+    volumes:
+      - ./nginx/nginx_default.conf:/etc/nginx/conf.d/default.conf
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf
+      - ./dist:/var/www/html:ro
+      - media:/var/www/media:ro
+    labels:
+      - "traefik.http.routers.frontend.rule=Host(`${DOMAIN_NAME}`) || Host(`${API_DOMAIN_NAME}`) && PathPrefix(`/media/`)"
+      - "traefik.http.routers.frontend.entrypoints=websecure"
+      - "traefik.http.routers.frontend.tls.certresolver=letsencrypt"
+      - "traefik.http.services.frontend.loadbalancer.server.port=81"
 
   db:
     image: postgres:alpine
@@ -80,16 +75,6 @@ services:
     image: redis:alpine
     container_name: redis
 
-  celery:
-    build:
-      dockerfile: ./Dockerfile.back.prod
-    restart: always
-    volumes:
-      - ./apps:/app
-    command: celery -A core.celery_app worker -l INFO
-    env_file:
-      - .env
-
 volumes:
-  media:
   data:
+  media:
